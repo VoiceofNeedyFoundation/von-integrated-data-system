@@ -1,14 +1,16 @@
-# Senior-management review pack: proposed VoN IDS data model
+# Senior-management review pack: proposed VoN IDS data architecture and model
 
-**Purpose:** Obtain business approval for how the Integrated Data System represents VoN's participant journey before any production database schema or historical migration is created.
+**Purpose:** Obtain business approval for how the Integrated Data System represents VoN's participant journey, data layers and management reporting before any production database schema or historical migration is created.
 
-**Review scope:** Managers are being asked to approve business meanings, ownership and reporting rules. They are not being asked to review SQL, database indexes or technical code.
+**Review scope:** Managers are being asked to approve business meanings, stage definitions, ownership, reporting requirements, privacy and the first-release boundary. The analyst/engineering review separately covers table grains, keys, staging, intermediate and dashboard fact tables.
 
 **Supporting documents:**
 
 - [Project understanding](project-understanding.md)
 - [Data profiling findings](data-profiling.md)
-- [Proposed data model](data-model.md)
+- [Layered data architecture](data-architecture.md)
+- [Core relational model and Mermaid ERDs](data-model.md)
+- [Dashboard and reporting model](dashboard-data-model.md)
 - [Draft data dictionary](data-dictionary.md)
 - [Decision log](decisions.md)
 
@@ -27,7 +29,23 @@ The system will allow a person to move through:
 
 The stages are connected, but not every person must complete every stage. Historical gaps will remain visible rather than being filled with assumptions.
 
-## 2. What the model changes compared with a spreadsheet
+## 2. Proposed data flow
+
+```mermaid
+flowchart TD
+    A["Historical Drive sources and future frontend"] --> B["Raw immutable records"]
+    B --> C["Cleaned staging tables"]
+    C --> D{"Validation and identity review"}
+    D -->|Accepted| E["Canonical operational tables"]
+    D -->|Unresolved| F["Exception and review queues"]
+    E --> G["Intermediate calculations"]
+    G --> H["Dashboard fact and dimension tables"]
+    H --> I["Management dashboards"]
+```
+
+This structure prevents source cleaning, identity matching and business-rule calculations from being hidden in the frontend or dashboard.
+
+## 3. What the model changes compared with a spreadsheet
 
 The model does not treat one spreadsheet row as the complete participant.
 
@@ -44,27 +62,29 @@ A single person can have:
 
 This separation is necessary because the current Master Sheet contains 4,945 sourcing rows for 4,826 people and 2,475 training records for 2,356 people. Automatically collapsing these differences could delete valid history.
 
-## 3. Recommended decisions
+## 4. Recommended decisions
 
 | Decision | Recommendation | Why it matters |
 | --- | --- | --- |
+| Data layers | Approve separate raw, staging, operational, intermediate and dashboard layers | Preserves source evidence and keeps dashboard logic reliable |
 | What is a participant? | Keep one canonical person record from the earliest safely identifiable stage; do not imply enrolment | Preserves outreach-only leads without classifying them as trainees |
 | Sourced lead without response | Keep the lead and disposition; do not create a fake mobilisation interaction | Current historical interaction evidence is incomplete |
 | Repeat training | Allow multiple enrolments for one participant | Current data already has more enrolments than trained people |
 | Registration vs enrolment | Treat as separate events | A registered person may not join a batch |
 | Session tracking | Store each planned/actual session as a row linked to a batch | Supports changing curricula and avoids adding new database columns |
 | Attendance | Record attendance by enrolment and scheduled session/date | Prevents same-name and wrong-batch matches |
-| Placement | Track referral, interview, selection, offer and joining separately | Current labels mix different stages |
+| Placement | Track referral, interview, selection, offer and joining as stage events | Current labels mix different stages |
 | Placement reporting | Recommended primary definition: joined employment with an approved evidence state | Selection or offer does not prove employment began |
 | Repeat jobs | Allow multiple employment episodes | Participants may change jobs or receive replacement support |
-| Follow-up | Track due and completed 3-, 6- and 12-month follow-ups per employment episode | Supports retention rather than placement-only reporting |
+| Follow-up | Track due and completed 3-, 6- and 12-month checkpoints per employment episode | Supports retention rather than placement-only reporting |
+| Dashboard tables | Build fact tables with declared grain and all approved filters | Avoids transformation and inconsistent metrics inside BI tools |
 | Historical blanks | Preserve as unknown/not collected; never invent data | Protects accuracy |
 | Identity matching | Human review for uncertain matches; never merge on name alone | Prevents combining different people |
 | Source authority | Approve authority by field and source class, not one workbook for everything | Original, translated, consolidated, portal and master values overlap |
 | Assessments | Keep model capability; decide whether weekly entry is first release or later | Evidence and current scope notes conflict |
 | Access | Approve role-based, minimum-necessary access | Data includes contact, disability, income and employment information |
 
-## 4. Questions requiring manager approval
+## 5. Questions requiring manager approval
 
 ### A. Scope and historical period
 
@@ -117,15 +137,17 @@ This separation is necessary because the current Master Sheet contains 4,945 sou
 29. Which donor/project/financial-year fields are mandatory?
 30. What are the official batch naming and coding rules?
 31. Which management reports and indicators must reconcile to donor reports?
+32. Which dashboard pages, charts and filters belong in the first release?
+33. Should placement reporting use verified joining as the headline metric?
 
 ### H. Privacy and access
 
-32. Which roles can view disability, identity-document, address, salary and income information?
-33. Which roles can export participant-level data?
-34. How long should unsuccessful leads and document evidence be retained?
-35. Who approves participant merges, major corrections and deletions/restrictions?
+34. Which roles can view disability, identity-document, address, salary and income information?
+35. Which roles can export participant-level data?
+36. How long should unsuccessful leads and document evidence be retained?
+37. Who approves participant merges, major corrections and deletions/restrictions?
 
-## 5. Source-of-truth proposal for review
+## 6. Source-of-truth proposal for review
 
 No single workbook is proposed as authoritative for every field.
 
@@ -141,7 +163,7 @@ No single workbook is proposed as authoritative for every field.
 
 Managers should approve the principle. Field-by-field authority will then be documented in the source-to-target mapping.
 
-## 6. Review outcome template
+## 7. Review outcome template
 
 For each item, record one of:
 
@@ -153,6 +175,7 @@ For each item, record one of:
 
 | Review area | Outcome | Required change/clarification | Decision owner | Date |
 | --- | --- | --- | --- | --- |
+| Layered architecture |  |  |  |  |
 | Participant journey |  |  |  |  |
 | Identity and IDs |  |  |  |  |
 | Historical period |  |  |  |  |
@@ -163,20 +186,21 @@ For each item, record one of:
 | Assessments |  |  |  |  |
 | Placement definition |  |  |  |  |
 | Follow-up/retention |  |  |  |  |
+| Dashboard metrics and filters |  |  |  |  |
 | Location hierarchy |  |  |  |  |
 | Source authority |  |  |  |  |
 | Roles and privacy |  |  |  |  |
 | First-release scope |  |  |  |  |
 
-## 7. Approval gate
+## 8. Approval gate
 
 The draft pull request should remain unmerged while the review is in progress. After review:
 
 1. Record manager decisions and required corrections.
-2. Update the model and decision log.
+2. Update the architecture, model, dashboard definitions and decision log.
 3. Obtain explicit approval of the corrected model.
 4. Merge the discovery/model documentation into `main`.
-5. Continue to detailed source-to-target mapping and migration preparation.
+5. Continue to field-level source-to-target mapping and migration preparation.
 6. Create Supabase schema work only when that separate work is authorised.
 
 Approval of this document does not authorise a production migration or a Supabase/Vercel change.
