@@ -1,18 +1,22 @@
 # Draft logical data dictionary
 
-**Status:** Proposed field-level companion to [data-model.md](data-model.md). Types and required fields are provisional until business review and source-to-target mapping are complete. No database objects have been created.
+**Status:** Proposed core/reference/audit field dictionary. Types and required fields are provisional until business review and source-to-target mapping are complete. No database objects have been created.
+
+This dictionary must be read with [data-architecture.md](data-architecture.md), [data-model.md](data-model.md) and [dashboard-data-model.md](dashboard-data-model.md). Raw, staging, intermediate and mart table grains are defined in those documents; this file provides the detailed operational fields.
 
 ## Conventions
 
+- PostgreSQL schemas separate reference, operational, audit and reporting responsibilities.
+- Physical table names use plural nouns; foreign keys use the referenced entity name.
 - Primary keys use immutable UUIDs.
-- Every operational table will include `created_at`, `updated_at`, `created_by` and an appropriate audit mechanism.
+- Every operational table includes `created_at`, `updated_at`, actor/request metadata and an appropriate audit mechanism.
 - Historical fields may be null when not collected. Null is not used to mean not applicable or refused where those meanings matter; explicit status fields are used.
-- Original source values are preserved through source lineage and, where needed, an `original_value` alongside the canonical value.
+- Original source values are preserved through raw records and source lineage, with approved canonical values stored separately.
 - Personal, disability, document and employment information is sensitive and must be access-controlled.
 
 ## 1. Participant identity
 
-### `participant`
+### `core.participants`
 
 Canonical person identity. Existence does not imply registration, training or placement.
 
@@ -31,7 +35,7 @@ Canonical person identity. Existence does not imply registration, training or pl
 | deceased_flag | Boolean | No | Only when operationally required |
 | notes | Text | No | Restricted non-source narrative |
 
-### `participant_identifier`
+### `core.participant_identifiers`
 
 | Field | Logical type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -46,7 +50,7 @@ Canonical person identity. Existence does not imply registration, training or pl
 
 Unique rule: identifier type + issuing system + value cannot link to two active participants without a recorded conflict.
 
-### `participant_contact`
+### `core.participant_contacts`
 
 | Field | Logical type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -61,7 +65,7 @@ Unique rule: identifier type + issuing system + value cannot link to two active 
 | verified_at | Timestamp | No | Verification time |
 | valid_from / valid_to | Date | No | History |
 
-### `participant_profile`
+### `core.participant_profiles`
 
 Stores operational profile attributes separately from identity.
 
@@ -79,7 +83,7 @@ Stores operational profile attributes separately from identity.
 | accommodation_needs | Text | No | Restricted operational need |
 | effective_from / effective_to | Date | No | Version validity |
 
-### `participant_document_check`
+### `core.participant_document_checks`
 
 Tracks verification state without unnecessarily copying document numbers or files.
 
@@ -97,7 +101,7 @@ Tracks verification state without unnecessarily copying document numbers or file
 
 ## 2. Sourcing and mobilisation
 
-### `source_lead`
+### `core.source_leads`
 
 | Field | Logical type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -112,7 +116,7 @@ Tracks verification state without unnecessarily copying document numbers or file
 | closure_reason_code | Reference | No | Reason for closure |
 | source_record_id | UUID/FK | Yes | Provenance |
 
-### `mobilisation_assignment`
+### `core.mobilisation_assignments`
 
 | Field | Logical type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -124,7 +128,7 @@ Tracks verification state without unnecessarily copying document numbers or file
 | assignment_status | Reference | Yes | active, reassigned, completed, cancelled |
 | ended_at | Timestamp | No | Closure time |
 
-### `mobilisation_interaction`
+### `core.mobilisation_interactions`
 
 | Field | Logical type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -142,7 +146,7 @@ Tracks verification state without unnecessarily copying document numbers or file
 
 ## 3. Programme and registration
 
-### `programme`
+### `ref.programmes`
 
 | Field | Logical type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -152,13 +156,13 @@ Tracks verification state without unnecessarily copying document numbers or file
 | description | Text | No | Purpose |
 | active_from / active_to | Date | No | Operating period |
 
-### `donor` and `project`
+### `ref.donors` and `ref.projects`
 
 `donor` holds a canonical funding organisation. `project` records a donor-funded/time-bound implementation with programme, dates, approved name and reporting period.
 
 Core project fields: `project_id`, `project_code`, `project_name`, `programme_id`, `donor_id`, `start_date`, `end_date`, `status`.
 
-### `registration`
+### `core.registrations`
 
 | Field | Logical type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -174,7 +178,7 @@ Core project fields: `project_id`, `project_code`, `project_name`, `programme_id
 | registered_at_location_id | UUID/FK | No | Registration location |
 | source_record_id | UUID/FK | No | Historical provenance |
 
-### `location` and `training_site`
+### `ref.locations` and `ref.training_sites`
 
 `location` stores a hierarchy using `location_id`, `parent_location_id`, `location_type`, `canonical_name` and official codes when available.
 
@@ -182,7 +186,7 @@ Core project fields: `project_id`, `project_code`, `project_name`, `programme_id
 
 ## 4. Training
 
-### `training_batch`
+### `core.training_batches`
 
 | Field | Logical type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -198,7 +202,7 @@ Core project fields: `project_id`, `project_code`, `project_name`, `programme_id
 | batch_status | Reference | Yes | planned, enrolling, active, completed, cancelled, unknown |
 | financial_year | Text/Reference | No | Approved FY representation |
 
-### `enrolment`
+### `core.enrolments`
 
 | Field | Logical type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -214,11 +218,11 @@ Core project fields: `project_id`, `project_code`, `project_name`, `programme_id
 
 Repeat enrolment is allowed. A separately approved duplicate-detection rule should flag suspicious same-person/same-batch records.
 
-### `session_definition`
+### `ref.session_definitions`
 
 Core fields: `session_definition_id`, `session_code`, `session_name`, `module_name`, `default_duration_minutes`, `sequence_hint`, `active_flag`.
 
-### `batch_session`
+### `core.batch_sessions`
 
 | Field | Logical type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -233,7 +237,7 @@ Core fields: `session_definition_id`, `session_code`, `session_name`, `module_na
 | cancellation_reason | Text | No | Reason |
 | delivery_notes | Text | No | Operational notes |
 
-### `attendance`
+### `core.attendance`
 
 | Field | Logical type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -248,7 +252,7 @@ Core fields: `session_definition_id`, `session_code`, `session_name`, `module_na
 
 Unique rule: one active attendance decision per enrolment and batch session. Corrections are audited.
 
-### `assessment_definition` and `assessment_result`
+### `ref.assessment_instruments`, `core.assessment_events` and `core.assessment_results`
 
 Definitions store instrument/version, stage (baseline, weekly, midline, endline), domain and scoring rules. Results link to participant/enrolment, assessment definition, date, score/value, evidence status and source record.
 
@@ -268,7 +272,7 @@ These tables remain future-compatible even if the first-release weekly workflow 
 
 ## 5. Placement and retention
 
-### `employer`
+### `core.employers`
 
 | Field | Logical type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -281,11 +285,11 @@ These tables remain future-compatible even if the first-release weekly workflow 
 | verification_status | Reference | Yes | unverified, verified, disputed, inactive |
 | active_flag | Boolean | Yes | Current operational status |
 
-### `employer_contact`
+### `core.employer_contacts`
 
 Core fields: `employer_contact_id`, `employer_id`, `contact_name`, `role_title`, protected phone/email, `valid_from`, `valid_to`, `verification_status`.
 
-### `job_opportunity`
+### `core.job_opportunities`
 
 | Field | Logical type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -300,7 +304,7 @@ Core fields: `employer_contact_id`, `employer_id`, `contact_name`, `role_title`,
 | opportunity_status | Reference | Yes | draft, open, paused, filled, closed, unknown |
 | opened_on / closed_on | Date | No | Availability period |
 
-### `placement_attempt`
+### `core.placement_attempts`
 
 | Field | Logical type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -316,7 +320,7 @@ Core fields: `employer_contact_id`, `employer_id`, `contact_name`, `role_title`,
 | evidence_status | Reference | Yes | reported, document verified, employer verified, unknown |
 | source_record_id | UUID/FK | No | Provenance |
 
-### `employment`
+### `core.employments`
 
 | Field | Logical type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -335,7 +339,7 @@ Core fields: `employer_contact_id`, `employer_id`, `contact_name`, `role_title`,
 | exit_reason_code | Reference | No | Exit reason |
 | verification_status | Reference | Yes | reported, participant verified, employer verified, document verified |
 
-### `follow_up`
+### `core.followups`
 
 | Field | Logical type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -355,19 +359,19 @@ Core fields: `employer_contact_id`, `employer_id`, `contact_name`, `role_title`,
 
 ## 6. Provenance, quality and audit
 
-### `source_asset`
+### `raw.source_assets`
 
 Core fields: `source_asset_id`, Drive/file identifier, file name, type, version/checksum, authority class (original, translated, consolidated, portal, master, derived), reporting period, owner, discovered date and active flag.
 
-### `source_record`
+### `raw.source_records`
 
 Core fields: `source_record_id`, `source_asset_id`, sheet/table name, source row key/fingerprint, extraction run, raw-record secure reference, observed date and import status.
 
-### `record_link`
+### `audit.record_lineage`
 
 Links one source record to a destination entity type and ID, with link purpose, transformation version and confidence/review state.
 
-### `identity_match_candidate`
+### `audit.identity_match_candidates`
 
 | Field | Logical type | Required | Meaning |
 | --- | --- | --- | --- |
@@ -381,17 +385,17 @@ Links one source record to a destination entity type and ID, with link purpose, 
 | reviewed_by / reviewed_at | UUID/Timestamp | No | Human review |
 | decision_reason | Text | No | Evidence-based decision |
 
-### `data_quality_issue`
+### `audit.data_quality_issues`
 
 Core fields: issue ID, source/destination reference, issue type, severity, description, detected rule/version, status, owner, resolution, resolved time and audit link.
 
-### `reference_value`
+### `ref.reference_values`
 
 Stores controlled vocabularies and historical-to-canonical mappings without overwriting the original source text.
 
 ## 7. Access and ownership placeholders
 
-The logical model reserves `user_profile`, `role`, and `user_role_assignment` with programme/project/location scope. The detailed permission matrix is intentionally not finalised until VoN confirms:
+The logical model reserves `core.user_profiles`, `core.roles`, and `core.user_role_assignments` with programme/project/location scope. The detailed permission matrix is intentionally not finalised until VoN confirms:
 
 - who can see participant contact and disability data;
 - who can create or edit mobilisation, training, attendance and placement records;
