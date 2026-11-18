@@ -1,9 +1,24 @@
-# von-integrated-data-system
-Integrated Data Management and Analytics System for Voice of Needy Foundation.
+# Voice of Needy Integrated Data System
 
-Goalkeep is supporting Voice of Needy with an integrated system for historical reporting and ongoing programme operations. The backend and frontend will be developed in parallel in this repository.
+This repository is the shared engineering workspace for Voice of Needy Foundation's Integrated Data System.
 
-- [Project understanding and requirements](docs/project-understanding.md)
-- [Phase 1 roadmap and review checkpoints](docs/roadmap.md)
+## Current scope
+
+The project is in evidence-led discovery. Current work is limited to GitHub documentation, source inventory, data profiling and preparation for review checkpoints. No Supabase or Vercel change is authorised in the current scope.
+
+Do not commit raw participant data, credentials, exports, screenshots containing personal information or local working files.
+
+## Discovery documentation
+
+- [Project status](docs/project-status.md)
+- [Project understanding](docs/project-understanding.md)
+- [Requirements register](docs/requirements.md)
+- [Initial data profiling](docs/data-profiling.md)
+- [Evidence register](docs/evidence-register.md)
+- [Decision log](docs/decisions.md)
+- [Phase 1 roadmap](docs/roadmap.md)
 - [Backend and frontend collaboration](docs/collaboration.md)
-- [Project status and open decisions](docs/project-status.md)
+- [Machine-readable source inventory](docs/source-inventory.csv)
+- [Machine-readable spreadsheet structure](docs/spreadsheet-structure.csv)
+
+The discovery artifacts are proposals until the applicable analyst checkpoint records approval.
