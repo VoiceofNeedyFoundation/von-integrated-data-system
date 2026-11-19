@@ -1,415 +1,311 @@
-# Draft logical data dictionary
+# Voice of Needy IDS data dictionary
 
-**Status:** Proposed core/reference/audit field dictionary. Types and required fields are provisional until business review and source-to-target mapping are complete. No database objects have been created.
+**Status:** Version 2 logical dictionary. Types are PostgreSQL-oriented and remain provisional until Checkpoint 3 approval.
 
-This dictionary must be read with [data-architecture.md](data-architecture.md), [data-model.md](data-model.md) and [dashboard-data-model.md](dashboard-data-model.md). Raw, staging, intermediate and mart table grains are defined in those documents; this file provides the detailed operational fields.
+Common fields on operational tables: `created_at timestamptz not null`, `updated_at timestamptz not null`, `created_by uuid null`, `updated_by uuid null`. Primary keys are UUIDs unless stated otherwise.
 
-## Conventions
-
-- PostgreSQL schemas separate reference, operational, audit and reporting responsibilities.
-- Physical table names use plural nouns; foreign keys use the referenced entity name.
-- Primary keys use immutable UUIDs.
-- Every operational table includes `created_at`, `updated_at`, actor/request metadata and an appropriate audit mechanism.
-- Historical fields may be null when not collected. Null is not used to mean not applicable or refused where those meanings matter; explicit status fields are used.
-- Original source values are preserved through raw records and source lineage, with approved canonical values stored separately.
-- Personal, disability, document and employment information is sensitive and must be access-controlled.
-
-## 1. Participant identity
-
-### `core.participants`
-
-Canonical person identity. Existence does not imply registration, training or placement.
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| participant_id | UUID | Yes | Internal immutable key |
-| participant_code | Text | After approval | Human-readable VoN ID; format pending |
-| given_name | Text | When known | Normalised first/given name |
-| middle_name | Text | No | Normalised middle name |
-| family_name | Text | No | Normalised surname/family name |
-| display_name | Text | Yes | Operational display name |
-| date_of_birth | Date | No | Verified or reported DOB |
-| birth_year | Integer | No | Used when full DOB was not collected |
-| gender_code | Reference | No | Approved controlled value |
-| identity_status | Reference | Yes | provisional, verified, disputed, merged, restricted |
-| deceased_flag | Boolean | No | Only when operationally required |
-| notes | Text | No | Restricted non-source narrative |
-
-### `core.participant_identifiers`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| participant_identifier_id | UUID | Yes | Primary key |
-| participant_id | UUID/FK | Yes | Canonical participant |
-| identifier_type | Reference | Yes | master ID, candidate ID, portal ID, legacy ID, etc. |
-| identifier_value | Text | Yes | Exact identifier value |
-| issuing_system | Text/Reference | Yes | Source system/organisation |
-| valid_from / valid_to | Date | No | Validity period |
-| verification_status | Reference | Yes | reported, matched, verified, disputed |
-| is_primary | Boolean | Yes | Primary identifier for that type |
-
-Unique rule: identifier type + issuing system + value cannot link to two active participants without a recorded conflict.
-
-### `core.participant_contacts`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| participant_contact_id | UUID | Yes | Primary key |
-| participant_id | UUID/FK | Yes | Participant |
-| contact_type | Reference | Yes | phone, email, address |
-| contact_value | Text | Yes | Protected contact value |
-| relationship_to_participant | Reference | No | self, parent, caregiver, other |
-| contact_name | Text | No | Contact person where not self |
-| is_primary | Boolean | Yes | Preferred contact of type |
-| consent_to_contact | Boolean/Unknown | No | Consent state where collected |
-| verified_at | Timestamp | No | Verification time |
-| valid_from / valid_to | Date | No | History |
-
-### `core.participant_profiles`
-
-Stores operational profile attributes separately from identity.
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| participant_profile_id | UUID | Yes | Primary key |
-| participant_id | UUID/FK | Yes | Participant |
-| disability_type_code | Reference | No | Approved category |
-| disability_percentage | Decimal | No | Reported/verified percentage |
-| disability_verification_status | Reference | No | reported, document verified, disputed |
-| education_level_code | Reference | No | Highest known education |
-| employment_status_code | Reference | No | Status at observation date |
-| household_income_band_code | Reference | No | Band, when required |
-| preferred_language_code | Reference | No | Communication/training language |
-| accommodation_needs | Text | No | Restricted operational need |
-| effective_from / effective_to | Date | No | Version validity |
-
-### `core.participant_document_checks`
-
-Tracks verification state without unnecessarily copying document numbers or files.
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| document_check_id | UUID | Yes | Primary key |
-| participant_id | UUID/FK | Yes | Participant |
-| registration_id | UUID/FK | No | Related registration |
-| document_type | Reference | Yes | UDID, disability certificate, education, bank, etc. |
-| check_status | Reference | Yes | not requested, requested, received, verified, rejected, expired |
-| checked_at | Timestamp | No | Verification time |
-| checked_by | UUID/FK | No | Responsible user |
-| issue_reason | Text | No | Missing/mismatch reason |
-| secure_object_reference | Text | No | Reference to approved private storage, if used |
-
-## 2. Sourcing and mobilisation
-
-### `core.source_leads`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| source_lead_id | UUID | Yes | Primary key |
-| participant_id | UUID/FK | No | Null until safely resolved |
-| source_channel_code | Reference | No | UDID list, referral, field visit, job fair, partner, social, other |
-| source_organisation | Text/Reference | No | Referring organisation |
-| sourced_on | Date | No | Observation/receipt date |
-| location_id | UUID/FK | No | Source location |
-| raw_name | Text | Yes | Source-record name retained through protected staging |
-| lead_status | Reference | Yes | new, assigned, contacted, interested, not interested, unreachable, registered, closed, unknown |
-| closure_reason_code | Reference | No | Reason for closure |
-| source_record_id | UUID/FK | Yes | Provenance |
-
-### `core.mobilisation_assignments`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| assignment_id | UUID | Yes | Primary key |
-| source_lead_id | UUID/FK | Yes | Assigned lead |
-| assigned_to_user_id | UUID/FK | Yes | Mobiliser |
-| assigned_at | Timestamp | Yes | Assignment time |
-| due_at | Timestamp | No | Follow-up deadline |
-| assignment_status | Reference | Yes | active, reassigned, completed, cancelled |
-| ended_at | Timestamp | No | Closure time |
-
-### `core.mobilisation_interactions`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| interaction_id | UUID | Yes | Primary key |
-| source_lead_id | UUID/FK | No | Related lead |
-| participant_id | UUID/FK | No | Canonical participant if resolved |
-| interaction_at | Timestamp | Yes for new data | Actual date/time |
-| interaction_type | Reference | Yes | call, visit, counselling, awareness, message, other |
-| outcome_code | Reference | Yes | connected, no answer, unreachable, interested, declined, callback, registered, other |
-| next_action_code | Reference | No | Required follow-up |
-| next_action_due_at | Timestamp | No | Due time |
-| performed_by | UUID/FK | No | Staff/user |
-| notes | Text | No | Restricted notes |
-| source_record_id | UUID/FK | No | Required for migrated data |
-
-## 3. Programme and registration
-
-### `ref.programmes`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| programme_id | UUID | Yes | Primary key |
-| programme_code | Text | Yes | Stable code |
-| programme_name | Text | Yes | Approved name |
-| description | Text | No | Purpose |
-| active_from / active_to | Date | No | Operating period |
-
-### `ref.donors` and `ref.projects`
-
-`donor` holds a canonical funding organisation. `project` records a donor-funded/time-bound implementation with programme, dates, approved name and reporting period.
-
-Core project fields: `project_id`, `project_code`, `project_name`, `programme_id`, `donor_id`, `start_date`, `end_date`, `status`.
-
-### `core.registrations`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| registration_id | UUID | Yes | Primary key |
-| participant_id | UUID/FK | Yes | Applicant |
-| programme_id | UUID/FK | Yes | Programme |
-| project_id | UUID/FK | No | Project if known |
-| registered_on | Date | No historically; yes for new data | Registration date |
-| registration_status | Reference | Yes | started, submitted, eligible, ineligible, verified, withdrawn, unknown |
-| consent_status | Reference | No | not requested, provided, declined, unknown |
-| eligibility_status | Reference | No | pending, eligible, ineligible, exception, unknown |
-| eligibility_reason | Text | No | Reason/exception |
-| registered_at_location_id | UUID/FK | No | Registration location |
-| source_record_id | UUID/FK | No | Historical provenance |
-
-### `ref.locations` and `ref.training_sites`
-
-`location` stores a hierarchy using `location_id`, `parent_location_id`, `location_type`, `canonical_name` and official codes when available.
-
-`training_site` stores `training_site_id`, `site_code`, `site_name`, `location_id`, `site_type`, `active_from` and `active_to`. This avoids assuming every historical label is a permanent centre.
-
-## 4. Training
-
-### `core.training_batches`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| batch_id | UUID | Yes | Primary key |
-| batch_code | Text | Yes | Stable VoN batch code |
-| batch_name | Text | No | Display label |
-| programme_id | UUID/FK | Yes | Programme |
-| project_id | UUID/FK | No | Donor/project |
-| training_site_id | UUID/FK | No | Delivery site |
-| planned_start_date / planned_end_date | Date | No | Plan |
-| actual_start_date / actual_end_date | Date | No | Observed dates |
-| target_size | Integer | No | Planned capacity |
-| batch_status | Reference | Yes | planned, enrolling, active, completed, cancelled, unknown |
-| financial_year | Text/Reference | No | Approved FY representation |
-
-### `core.enrolments`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| enrolment_id | UUID | Yes | Primary key |
-| participant_id | UUID/FK | Yes | Participant |
-| registration_id | UUID/FK | No | Registration, where available |
-| batch_id | UUID/FK | Yes | Batch |
-| enrolled_on | Date | No historically; yes for new data | Enrolment date |
-| enrolment_status | Reference | Yes | enrolled, active, completed, discontinued, transferred, cancelled, unknown |
-| exit_date | Date | No | Exit/completion date |
-| exit_reason_code | Reference | No | Reason |
-| source_record_id | UUID/FK | No | Provenance |
-
-Repeat enrolment is allowed. A separately approved duplicate-detection rule should flag suspicious same-person/same-batch records.
-
-### `ref.session_definitions`
-
-Core fields: `session_definition_id`, `session_code`, `session_name`, `module_name`, `default_duration_minutes`, `sequence_hint`, `active_flag`.
-
-### `core.batch_sessions`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| batch_session_id | UUID | Yes | Primary key |
-| batch_id | UUID/FK | Yes | Batch |
-| session_definition_id | UUID/FK | No | Curriculum definition |
-| session_title | Text | Yes | Actual title |
-| planned_start_at / planned_end_at | Timestamp | No | Planned schedule |
-| actual_start_at / actual_end_at | Timestamp | No | Actual delivery |
-| trainer_user_id | UUID/FK | No | Lead trainer |
-| delivery_status | Reference | Yes | planned, completed, partial, postponed, cancelled, unknown |
-| cancellation_reason | Text | No | Reason |
-| delivery_notes | Text | No | Operational notes |
-
-### `core.attendance`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| attendance_id | UUID | Yes | Primary key |
-| enrolment_id | UUID/FK | Yes | Participant's batch enrolment |
-| batch_session_id | UUID/FK | Yes | Session |
-| attendance_status | Reference | Yes | present, absent, excused, not scheduled, unknown/not recorded |
-| recorded_at | Timestamp | No | Entry time |
-| recorded_by | UUID/FK | No | User |
-| verification_status | Reference | Yes | reported, verified, disputed |
-| source_record_id | UUID/FK | No | Historical provenance |
-
-Unique rule: one active attendance decision per enrolment and batch session. Corrections are audited.
-
-### `ref.assessment_instruments`, `core.assessment_events` and `core.assessment_results`
-
-Definitions store instrument/version, stage (baseline, weekly, midline, endline), domain and scoring rules. Results link to participant/enrolment, assessment definition, date, score/value, evidence status and source record.
-
-These tables remain future-compatible even if the first-release weekly workflow is deferred.
-
-### `training_completion`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| training_completion_id | UUID | Yes | Primary key |
-| enrolment_id | UUID/FK | Yes | Enrolment |
-| completion_status | Reference | Yes | completed, discontinued, transferred, in progress, unknown |
-| decision_date | Date | No | Determination date |
-| attendance_summary | Decimal/Integer | No | Derived only from verified attendance |
-| evidence_status | Reference | Yes | reported, calculated, verified, unknown |
-| reason_code | Reference | No | Discontinuation/exception reason |
-
-## 5. Placement and retention
-
-### `core.employers`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| employer_id | UUID | Yes | Primary key |
-| employer_code | Text | Yes | Stable code |
-| legal_name | Text | Yes | Canonical name |
-| display_name | Text | No | Common name |
-| sector_code | Reference | No | Industry/sector |
-| headquarters_location_id | UUID/FK | No | Location |
-| verification_status | Reference | Yes | unverified, verified, disputed, inactive |
-| active_flag | Boolean | Yes | Current operational status |
-
-### `core.employer_contacts`
-
-Core fields: `employer_contact_id`, `employer_id`, `contact_name`, `role_title`, protected phone/email, `valid_from`, `valid_to`, `verification_status`.
-
-### `core.job_opportunities`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| job_opportunity_id | UUID | Yes | Primary key |
-| employer_id | UUID/FK | Yes | Employer |
-| role_title | Text | Yes | Vacancy role |
-| job_location_id | UUID/FK | No | Location |
-| openings | Integer | No | Number of openings |
-| compensation_amount | Decimal | No | Amount |
-| compensation_period | Reference | No | monthly, daily, annual, other |
-| accessibility_notes | Text | No | Workplace/accessibility information |
-| opportunity_status | Reference | Yes | draft, open, paused, filled, closed, unknown |
-| opened_on / closed_on | Date | No | Availability period |
-
-### `core.placement_attempts`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| placement_attempt_id | UUID | Yes | Primary key |
-| participant_id | UUID/FK | Yes | Candidate |
-| enrolment_id | UUID/FK | No | Related training enrolment |
-| job_opportunity_id | UUID/FK | No | Opportunity |
-| employer_id | UUID/FK | No | Employer when opportunity record is absent |
-| attempt_date | Date | No historically; yes for new data | Referral/interview date |
-| attempt_stage | Reference | Yes | referred, interview scheduled, interviewed, selected, offered, rejected, withdrawn, no-show |
-| outcome_date | Date | No | Outcome date |
-| outcome_reason | Text/Reference | No | Reason |
-| evidence_status | Reference | Yes | reported, document verified, employer verified, unknown |
-| source_record_id | UUID/FK | No | Provenance |
-
-### `core.employments`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| employment_id | UUID | Yes | Primary key |
-| participant_id | UUID/FK | Yes | Employee |
-| placement_attempt_id | UUID/FK | No | Originating attempt |
-| employer_id | UUID/FK | Yes | Employer |
-| job_opportunity_id | UUID/FK | No | Opportunity |
-| role_title | Text | No | Joined role |
-| work_location_id | UUID/FK | No | Work location |
-| offered_on | Date | No | Offer date |
-| joined_on | Date | Required for verified placement | Joining date |
-| compensation_amount / period | Decimal/Reference | No | Starting compensation |
-| employment_status | Reference | Yes | offered, joined, active, left, terminated, unknown |
-| ended_on | Date | No | End date |
-| exit_reason_code | Reference | No | Exit reason |
-| verification_status | Reference | Yes | reported, participant verified, employer verified, document verified |
-
-### `core.followups`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| follow_up_id | UUID | Yes | Primary key |
-| participant_id | UUID/FK | Yes | Participant |
-| employment_id | UUID/FK | No | Employment episode |
-| follow_up_type | Reference | Yes | 3-month, 6-month, 12-month, event-based |
-| due_on | Date | No | Scheduled date |
-| completed_on | Date | No | Actual interaction date |
-| contact_outcome | Reference | No | reached, unreachable, rescheduled, declined |
-| employment_status_observed | Reference | No | active, left, changed job, unknown |
-| satisfaction_or_progress | Text/Reference | No | Approved measure |
-| support_needed | Boolean/Unknown | No | Support flag |
-| next_action_due_on | Date | No | Follow-up action |
-| performed_by | UUID/FK | No | Staff/user |
-| source_record_id | UUID/FK | No | Provenance |
-
-## 6. Provenance, quality and audit
-
-### `raw.source_assets`
-
-Core fields: `source_asset_id`, Drive/file identifier, file name, type, version/checksum, authority class (original, translated, consolidated, portal, master, derived), reporting period, owner, discovered date and active flag.
-
-### `raw.source_records`
-
-Core fields: `source_record_id`, `source_asset_id`, sheet/table name, source row key/fingerprint, extraction run, raw-record secure reference, observed date and import status.
-
-### `audit.record_lineage`
-
-Links one source record to a destination entity type and ID, with link purpose, transformation version and confidence/review state.
-
-### `audit.identity_match_candidates`
-
-| Field | Logical type | Required | Meaning |
-| --- | --- | --- | --- |
-| identity_match_candidate_id | UUID | Yes | Primary key |
-| left_source_record_id | UUID/FK | Yes | First record |
-| right_participant_id or source_record_id | UUID/FK | Yes | Candidate match |
-| match_score | Decimal | No | Algorithmic score, not a decision |
-| matched_signals | Structured data | No | Phone, DOB, legacy ID, etc.; protected |
-| conflicting_signals | Structured data | No | Conflicts |
-| review_status | Reference | Yes | pending, confirmed, rejected, insufficient evidence |
-| reviewed_by / reviewed_at | UUID/Timestamp | No | Human review |
-| decision_reason | Text | No | Evidence-based decision |
-
-### `audit.data_quality_issues`
-
-Core fields: issue ID, source/destination reference, issue type, severity, description, detected rule/version, status, owner, resolution, resolved time and audit link.
+## Reference tables
 
 ### `ref.reference_values`
 
-Stores controlled vocabularies and historical-to-canonical mappings without overwriting the original source text.
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `reference_value_id` | uuid PK | No | Immutable |
+| `list_name` | text | No | Controlled list, e.g. attendance_status |
+| `code` | text | No | Stable machine code |
+| `label` | text | No | User-facing label |
+| `sort_order` | integer | No | Default 0 |
+| `is_active` | boolean | No | Retire, never delete used values |
 
-## 7. Access and ownership placeholders
+Unique: `(list_name, code)`.
 
-The logical model reserves `core.user_profiles`, `core.roles`, and `core.user_role_assignments` with programme/project/location scope. The detailed permission matrix is intentionally not finalised until VoN confirms:
+### `ref.projects`
 
-- who can see participant contact and disability data;
-- who can create or edit mobilisation, training, attendance and placement records;
-- who can verify identity and documents;
-- who can export data;
-- who can approve corrections, merges and status changes;
-- how former staff access is removed.
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `project_id` | uuid PK | No | Immutable |
+| `project_code` | text | No | Unique business code |
+| `project_name` | text | No | Programme/project name |
+| `donor_name` | text | Yes | Separate donor table only if later justified |
+| `start_date`, `end_date` | date | Yes | End not before start |
+| `target_participants` | integer | Yes | Non-negative |
+| `is_active` | boolean | No | Default true |
 
-## 8. Required next modelling work after business approval
+### `ref.locations`
 
-1. Confirm the model review decisions.
-2. Map every approved Master Sheet/source column to a destination field.
-3. Classify every field as observed, transformed or derived.
-4. Define canonical status and reference-value lists.
-5. Define future-entry required fields separately from historical migration requirements.
-6. Create synthetic examples and validation tests.
-7. Convert the approved logical model into version-controlled SQL only when Supabase work is authorised.
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `location_id` | uuid PK | No | Immutable |
+| `location_code` | text | No | Unique |
+| `location_name` | text | No | Standard display name |
+| `location_type` | text | No | Centre/city/district/state/other |
+| `parent_location_id` | uuid FK | Yes | Self-reference; no cycles |
+| `is_training_centre` | boolean | No | Default false |
+| `is_active` | boolean | No | Default true |
+
+### `ref.assessment_rubrics`
+
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `rubric_item_id` | uuid PK | No | Immutable |
+| `rubric_version` | text | No | Versioned, not overwritten |
+| `assessment_point` | text | No | Baseline/midline/endline or approved value |
+| `domain_code` | text | No | Stable domain |
+| `domain_label` | text | No | Display label |
+| `maximum_score` | numeric | No | Greater than 0 |
+| `effective_from`, `effective_to` | date | Yes | Preserve old definitions |
+
+Unique: `(rubric_version, assessment_point, domain_code)`.
+
+## Participant and mobilisation
+
+### `core.participants`
+
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `participant_id` | uuid PK | No | System generated; never derived from name/phone |
+| `participant_code` | text | No | Unique human-readable VoN code |
+| `first_name` | text | No | Trimmed; original retained in lineage |
+| `middle_name`, `last_name` | text | Yes | No fabricated components |
+| `date_of_birth` | date | Yes | Age is derived, not stored |
+| `gender_code` | text | Yes | Controlled value |
+| `record_status` | text | No | active/inactive/deceased/duplicate_pending_review |
+
+### `core.participant_identifiers`
+
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `participant_identifier_id` | uuid PK | No | Immutable |
+| `participant_id` | uuid FK | No | Parent participant |
+| `identifier_type` | text | No | UDID, source ID, legacy ID, other |
+| `identifier_value_encrypted` | text | No | Restricted; encrypted where required |
+| `normalised_hash` | text | Yes | Matching without exposing value |
+| `is_verified` | boolean | No | Default false |
+| `verified_at` | timestamptz | Yes | Required when verified |
+
+Verified identifiers enforce uniqueness by type and normalised hash where business rules permit.
+
+### `core.participant_contacts`
+
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `participant_contact_id` | uuid PK | No | Immutable |
+| `participant_id` | uuid FK | No | Parent participant |
+| `contact_type` | text | No | mobile/email/caregiver/other |
+| `contact_name` | text | Yes | For caregiver/alternate contact |
+| `relationship_code` | text | Yes | Controlled |
+| `contact_value_encrypted` | text | No | Restricted PII |
+| `normalised_hash` | text | Yes | Matching/search helper |
+| `is_primary`, `is_verified` | boolean | No | Defaults false |
+
+### `core.participant_support_profiles`
+
+One restricted current profile per participant.
+
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `participant_id` | uuid PK/FK | No | One-to-one |
+| `disability_category_code` | text | Yes | Controlled; no diagnosis inference |
+| `support_needs` | text | Yes | Free text with access restriction |
+| `accessibility_requirements` | text | Yes | Operational accommodations |
+| `preferred_job_sectors` | text[] | Yes | Controlled codes when approved |
+| `preferred_work_locations` | text[] | Yes | Controlled/location IDs where possible |
+| `career_goal` | text | Yes | Participant-stated |
+| `profile_verified_at` | timestamptz | Yes | Verification timestamp |
+
+### `core.mobilisation_cases`
+
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `mobilisation_case_id` | uuid PK | No | One opportunity/cycle |
+| `participant_id` | uuid FK | Yes | Null while unresolved |
+| `project_id` | uuid FK | Yes | Intended project/programme |
+| `source_channel_code` | text | Yes | Controlled |
+| `source_name` | text | Yes | Partner/camp/referral detail |
+| `first_contact_date` | date | Yes | Historical data may be incomplete |
+| `current_stage_code` | text | No | lead/contacted/eligible/ineligible/enrolled/not_joined/etc. |
+| `stage_reason_code` | text | Yes | Required for terminal non-enrolment stages |
+| `owner_staff_id` | uuid FK | Yes | Current owner |
+| `converted_enrolment_id` | uuid FK | Yes | Set only after enrolment exists |
+
+### `core.mobilisation_interactions`
+
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `interaction_id` | uuid PK | No | One event |
+| `mobilisation_case_id` | uuid FK | No | Parent case |
+| `interaction_at` | timestamptz | No | Event time/date |
+| `channel_code` | text | No | call/visit/camp/message/other |
+| `outcome_code` | text | Yes | Controlled |
+| `notes` | text | Yes | No unnecessary sensitive detail |
+| `next_action_at` | timestamptz | Yes | Follow-up due |
+| `staff_id` | uuid FK | Yes | Actor/owner |
+
+## Training
+
+### `core.batches`
+
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `batch_id` | uuid PK | No | Immutable |
+| `batch_code` | text | No | Unique business code |
+| `project_id` | uuid FK | No | Donor/programme context |
+| `location_id` | uuid FK | No | Centre |
+| `planned_intake` | integer | Yes | Non-negative |
+| `planned_start_date`, `planned_end_date` | date | Yes | Separate from actual |
+| `actual_start_date`, `actual_end_date` | date | Yes | Evidence-based |
+| `batch_status_code` | text | No | planned/active/completed/cancelled |
+
+### `core.enrolments`
+
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `enrolment_id` | uuid PK | No | Immutable |
+| `participant_id` | uuid FK | No | Participant |
+| `batch_id` | uuid FK | No | Batch |
+| `attempt_number` | integer | No | Default 1 |
+| `registration_date`, `enrolment_date` | date | Yes | Keep distinct only where source supports |
+| `status_code` | text | No | enrolled/active/completed/dropped/reentered/withdrawn |
+| `completion_date` | date | Yes | Required for completed |
+| `exit_date` | date | Yes | Required for terminal exits where known |
+| `exit_reason_code` | text | Yes | Required for dropout/withdrawal |
+| `reentry_date` | date | Yes | For approved re-entry |
+
+Unique: `(participant_id, batch_id, attempt_number)`.
+
+### `core.sessions`
+
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `session_id` | uuid PK | No | Immutable |
+| `batch_id` | uuid FK | No | Parent batch |
+| `session_sequence` | integer | No | Unique within batch |
+| `module_code` | text | No | Retail/digital/communication/financial_literacy/life_skills/approved other |
+| `topic` | text | Yes | Session topic |
+| `planned_date`, `actual_date` | date | Yes | Never overwrite planned with actual |
+| `delivery_status_code` | text | No | planned/delivered/rescheduled/cancelled |
+| `status_reason_code` | text | Yes | Required for cancelled/rescheduled |
+| `facilitator_staff_id` | uuid FK | Yes | Staff |
+
+### `core.attendance`
+
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `attendance_id` | uuid PK | No | Immutable |
+| `enrolment_id` | uuid FK | No | Enrolment |
+| `session_id` | uuid FK | No | Same batch as enrolment |
+| `attendance_status_code` | text | No | Approved values |
+| `attendance_reason_code` | text | Yes | Required where policy says |
+| `recorded_at` | timestamptz | No | Audit time |
+
+Unique: `(enrolment_id, session_id)`.
+
+### `core.assessment_events` and `core.assessment_results`
+
+| Table/field | Type | Null | Rule |
+|---|---|---:|---|
+| `assessment_events.assessment_event_id` | uuid PK | No | One sitting |
+| `assessment_events.enrolment_id` | uuid FK | No | Enrolment |
+| `assessment_events.assessment_point` | text | No | baseline/midline/endline |
+| `assessment_events.attempt_number` | integer | No | Default 1 |
+| `assessment_events.assessment_date` | date | Yes | Null only when planned/missing record |
+| `assessment_events.completion_status` | text | No | complete/partial/missing/not_due |
+| `assessment_events.missing_reason_code` | text | Yes | Required when missing |
+| `assessment_results.assessment_result_id` | uuid PK | No | One domain result |
+| `assessment_results.assessment_event_id` | uuid FK | No | Parent event |
+| `assessment_results.rubric_item_id` | uuid FK | No | Versioned domain definition |
+| `assessment_results.score_value` | numeric | Yes | Between 0 and maximum |
+| `assessment_results.score_percent` | numeric | Yes | Derived, not manually entered |
+
+### `core.readiness_reviews`
+
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `readiness_review_id` | uuid PK | No | Dated review |
+| `enrolment_id` | uuid FK | No | Enrolment |
+| `review_date` | date | No | Review date |
+| `profile_complete` | boolean | No | Evidence rule required |
+| `documents_verified` | boolean | No | No document files in this table |
+| `resume_current` | boolean | No | Current as of review |
+| `interview_ready` | boolean | No | Approved assessment rule |
+| `overall_ready` | boolean | No | Derived from approved rule |
+| `gap_notes` | text | Yes | Outstanding actions |
+
+## Placement and outcomes
+
+### `core.employers` and `core.vacancies`
+
+| Table/field | Type | Null | Rule |
+|---|---|---:|---|
+| `employers.employer_id` | uuid PK | No | One organisation |
+| `employers.employer_name` | text | No | Normalised; aliases handled in lineage |
+| `employers.sector_code` | text | Yes | Controlled |
+| `employers.relationship_status_code` | text | No | prospect/active/inactive |
+| `employers.last_verified_date` | date | Yes | Activity freshness |
+| `employers.accessibility_notes` | text | Yes | Operational information |
+| `vacancies.vacancy_id` | uuid PK | No | One opportunity |
+| `vacancies.employer_id` | uuid FK | No | Employer |
+| `vacancies.role_title` | text | No | Job title |
+| `vacancies.location_id` | uuid FK | Yes | Work location |
+| `vacancies.openings_count` | integer | Yes | Non-negative |
+| `vacancies.status_code` | text | No | open/on_hold/closed/filled |
+| `vacancies.open_date`, `vacancies.close_date` | date | Yes | Valid interval |
+| `vacancies.requirements`, `vacancies.accessibility_notes` | text | Yes | Matching inputs |
+
+### `core.candidate_vacancy_matches`
+
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `candidate_vacancy_match_id` | uuid PK | No | One attempt |
+| `enrolment_id` | uuid FK | No | Candidate programme stay |
+| `vacancy_id` | uuid FK | No | Opportunity |
+| `match_attempt` | integer | No | Default 1 |
+| `skills_fit`, `preference_fit`, `location_fit`, `accessibility_fit` | boolean | Yes | Unknown is distinct from false |
+| `suitability_status_code` | text | No | suitable/partly_suitable/not_suitable/not_assessed |
+| `suitability_reason` | text | Yes | Required for non-suitable decisions |
+| `pipeline_stage_code` | text | No | mapped/referred/interviewed/selected/offered/rejected/withdrawn/joined |
+| `referred_at`, `interviewed_at`, `offered_at` | date | Yes | Milestone dates |
+| `stage_reason_code` | text | Yes | Rejection/withdrawal reason |
+
+### `core.employments`
+
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `employment_id` | uuid PK | No | One employment episode |
+| `candidate_vacancy_match_id` | uuid FK | Yes | May be null for verified historical placements |
+| `participant_id` | uuid FK | No | Person |
+| `employer_id` | uuid FK | No | Employer |
+| `role_title` | text | No | Actual joined role |
+| `join_date` | date | No | Verified actual joining |
+| `employment_status_code` | text | No | active/ended/unknown |
+| `end_date`, `end_reason_code` | date/text | Yes | Required as applicable |
+| `joining_income_amount` | numeric | Yes | Non-negative |
+| `income_currency`, `income_period_code` | text | Yes | Required with amount |
+| `joining_verified`, `joining_verified_at` | boolean/timestamptz | No/Yes | Evidence status |
+
+### `core.employment_followups`
+
+| Field | Type | Null | Rule |
+|---|---|---:|---|
+| `employment_followup_id` | uuid PK | No | One attempt/checkpoint |
+| `employment_id` | uuid FK | No | Employment episode |
+| `checkpoint_month` | integer | No | Normally 12 or 24; extensible |
+| `attempt_number` | integer | No | Follow-up attempts preserved |
+| `due_date`, `completed_date` | date | No/Yes | Completed may be null while pending |
+| `verification_status_code` | text | No | pending/verified/unverified/unreachable |
+| `retention_status_code` | text | Yes | same_employer/different_employer/exited/unknown |
+| `current_employer_id` | uuid FK | Yes | Allows change of employer |
+| `current_role_title` | text | Yes | Current role |
+| `current_income_amount` | numeric | Yes | Comparable amount |
+| `income_currency`, `income_period_code` | text | Yes | Required with amount |
+| `exit_reason_code` | text | Yes | If not employed |
+
+Unique: `(employment_id, checkpoint_month, attempt_number)`.
+
+## Staff and security
+
+`core.staff` stores `staff_id`, name, work email, title, active flag and optional auth user ID. `security.user_roles` stores `auth_user_id`, role code, optional project/location scope, valid dates and active flag. Permission enforcement is implemented with RLS after approval.
+
+## Audit dictionary
+
+`audit.import_runs`, `audit.source_records`, `audit.identity_reviews`, `audit.data_quality_issues` and `audit.change_log` are defined in the architecture document. Source records include source asset ID, sheet/table, row key, raw hash, import run, target entity/table/ID and disposition.
