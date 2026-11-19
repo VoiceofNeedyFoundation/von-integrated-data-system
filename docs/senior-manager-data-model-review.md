@@ -1,206 +1,80 @@
-# Senior-management review pack: proposed VoN IDS data architecture and model
+# Senior-management review pack: VoN data model version 2
 
-**Purpose:** Obtain business approval for how the Integrated Data System represents VoN's participant journey, data layers and management reporting before any production database schema or historical migration is created.
+## Decision requested
 
-**Review scope:** Managers are being asked to approve business meanings, stage definitions, ownership, reporting requirements, privacy and the first-release boundary. The analyst/engineering review separately covers table grains, keys, staging, intermediate and dashboard fact tables.
+Approve the proposed representation of VoN's participant journey and the management definitions that must be finalised before technical implementation. This is approval of the business model, not approval to migrate production data.
 
-**Supporting documents:**
+## What changed from the first proposal
 
-- [Project understanding](project-understanding.md)
-- [Data profiling findings](data-profiling.md)
-- [Layered data architecture](data-architecture.md)
-- [Core relational model and Mermaid ERDs](data-model.md)
-- [Dashboard and reporting model](dashboard-data-model.md)
-- [Draft data dictionary](data-dictionary.md)
-- [Decision log](decisions.md)
+The model has been rebuilt against the 13 key questions and simplified to **22 canonical business-data tables**, plus minimal staff/access and audit structures. Tables were combined or removed where they did not have an independent business lifecycle. Historical import/audit tables and dashboard marts are now visibly separated from operational tables.
 
-## 1. Proposed participant journey
-
-The system will allow a person to move through:
-
-1. Sourcing or identification
-2. Mobilisation and counselling
-3. Registration and document verification
-4. Training enrolment and batch allocation
-5. Sessions, attendance and assessments
-6. Training completion
-7. Placement attempts and employment
-8. Post-placement follow-up and support
-
-The stages are connected, but not every person must complete every stage. Historical gaps will remain visible rather than being filled with assumptions.
-
-## 2. Proposed data flow
+## Business journey represented
 
 ```mermaid
 flowchart TD
-    A["Historical Drive sources and future frontend"] --> B["Raw immutable records"]
-    B --> C["Cleaned staging tables"]
-    C --> D{"Validation and identity review"}
-    D -->|Accepted| E["Canonical operational tables"]
-    D -->|Unresolved| F["Exception and review queues"]
-    E --> G["Intermediate calculations"]
-    G --> H["Dashboard fact and dimension tables"]
-    H --> I["Management dashboards"]
+    A["Mobilised prospect"] --> B["Follow-up and eligibility"]
+    B --> C["Enrolment and batch"]
+    C --> D["Sessions, attendance and assessments"]
+    D --> E["Placement readiness"]
+    E --> F["Vacancy mapping and selection"]
+    F --> G["Verified employment"]
+    G --> H["12/24-month retention and income"]
 ```
 
-This structure prevents source cleaning, identity matching and business-rule calculations from being hidden in the frontend or dashboard.
+## What managers should review
 
-## 3. What the model changes compared with a spreadsheet
+| Area | Proposed rule | Approval needed |
+|---|---|---|
+| Mobilised denominator | Deduplicated eligible mobilisation cases within reporting period | Define eligibility and which sources count |
+| Conversion | Enrolment, not registration or verbal interest | Confirm |
+| Planned intake | Stored on each batch before enrolment starts | Confirm ownership and change approval |
+| Session delivery | Planned, delivered, rescheduled and cancelled are distinct | Approve module and reason lists |
+| Assessment coverage | Baseline/midline/endline calculated against eligible enrolments | Define eligibility and timing windows |
+| 45-day completion | Stored as enrolment outcome, calculated using approved attendance rule | Approve exact rule |
+| Placement readiness | Profile + verified documents + current resume + interview readiness | Approve evidence standard |
+| Placement | Verified actual joining, not selection or offer | Confirm verification evidence |
+| Suitability | Skills, preferences, location and accessibility assessed separately | Approve criteria and who signs off |
+| Retention | Verified status at 12 and 24 months; unreachable/unverified shown separately | Approve denominator treatment |
+| Income improvement | Comparable verified joining and checkpoint income | Approve collection method and privacy access |
 
-The model does not treat one spreadsheet row as the complete participant.
+## Why the main separations are necessary
 
-A single person can have:
+- A participant is a person; an enrolment is one stay in one batch. A person can return without being duplicated.
+- A planned session is distinct from an attendance mark. One session serves many enrolments.
+- An assessment event is distinct from its domain scores, allowing several domains under one sitting.
+- A vacancy mapping is not an employment. Selection and offers can fail to produce joining.
+- Employment follow-ups repeat at checkpoints and must preserve unreachable/unverified outcomes.
+- Contacts, identifiers and disability/support needs are separated for privacy and access control.
 
-- more than one sourcing record;
-- several calls or mobilisation interactions;
-- more than one programme registration;
-- repeat training enrolment;
-- many attendance and assessment records;
-- several employer referrals/interviews;
-- more than one job;
-- multiple follow-up interactions.
+## What has deliberately not been modelled
 
-This separation is necessary because the current Master Sheet contains 4,945 sourcing rows for 4,826 people and 2,475 training records for 2,356 people. Automatically collapsing these differences could delete valid history.
+Fees, goal plans, generic meeting logs, monthly staff targets and other entities in the external reference model were excluded because VoN's current key questions and evidence do not require them. Donor is currently an attribute of a project rather than a separate master table. These can be added later only with verified need.
 
-## 4. Recommended decisions
+## Data gaps that affect the dashboard
 
-| Decision | Recommendation | Why it matters |
-| --- | --- | --- |
-| Data layers | Approve separate raw, staging, operational, intermediate and dashboard layers | Preserves source evidence and keeps dashboard logic reliable |
-| What is a participant? | Keep one canonical person record from the earliest safely identifiable stage; do not imply enrolment | Preserves outreach-only leads without classifying them as trainees |
-| Sourced lead without response | Keep the lead and disposition; do not create a fake mobilisation interaction | Current historical interaction evidence is incomplete |
-| Repeat training | Allow multiple enrolments for one participant | Current data already has more enrolments than trained people |
-| Registration vs enrolment | Treat as separate events | A registered person may not join a batch |
-| Session tracking | Store each planned/actual session as a row linked to a batch | Supports changing curricula and avoids adding new database columns |
-| Attendance | Record attendance by enrolment and scheduled session/date | Prevents same-name and wrong-batch matches |
-| Placement | Track referral, interview, selection, offer and joining as stage events | Current labels mix different stages |
-| Placement reporting | Recommended primary definition: joined employment with an approved evidence state | Selection or offer does not prove employment began |
-| Repeat jobs | Allow multiple employment episodes | Participants may change jobs or receive replacement support |
-| Follow-up | Track due and completed 3-, 6- and 12-month checkpoints per employment episode | Supports retention rather than placement-only reporting |
-| Dashboard tables | Build fact tables with declared grain and all approved filters | Avoids transformation and inconsistent metrics inside BI tools |
-| Historical blanks | Preserve as unknown/not collected; never invent data | Protects accuracy |
-| Identity matching | Human review for uncertain matches; never merge on name alone | Prevents combining different people |
-| Source authority | Approve authority by field and source class, not one workbook for everything | Original, translated, consolidated, portal and master values overlap |
-| Assessments | Keep model capability; decide whether weekly entry is first release or later | Evidence and current scope notes conflict |
-| Access | Approve role-based, minimum-necessary access | Data includes contact, disability, income and employment information |
+1. Standard non-enrolment and dropout reasons are incomplete.
+2. Planned intake and planned sessions are not consistently structured historically.
+3. Employer vacancy and candidate mapping data need a formal workflow.
+4. Readiness requires one agreed checklist.
+5. Assessment rubrics/domains must be versioned and comparable.
+6. Verified joining must be distinguished from offers.
+7. 12/24-month follow-up requires a scheduled process.
+8. KQ12 income data is currently unavailable and requires new collection.
 
-## 5. Questions requiring manager approval
+## Approval options
 
-### A. Scope and historical period
+| Option | Consequence |
+|---|---|
+| Approve version 2 with definitions | Technical team can create the physical schema/migrations after formal Checkpoint 3 sign-off |
+| Approve with named amendments | Model is revised and re-presented; no production work starts |
+| Defer | Discovery continues; frontend must not lock incompatible forms/contracts |
 
-1. Should historical migration include all available data from 2017–2026?
-2. If phased, which years and projects are mandatory for the first migration?
-3. Which programmes other than the livelihood/training pathway must be included now?
+## Recommended approval sequence
 
-### B. Participant identity
+1. VoN programme managers validate the journey and status definitions.
+2. Goalkeep analyst validates KQ formulas, grains, historical availability and gaps.
+3. Frontend lead validates form/workflow compatibility.
+4. Technical reviewer validates keys, constraints, privacy boundaries and RLS plan.
+5. Design is marked approved with decision date and approvers.
 
-4. At what point should a sourced name become a canonical participant: when sourced, first contacted, registered or enrolled?
-5. Should the existing Master Sheet participant IDs remain the business identifiers?
-6. Who is authorised to approve or reject uncertain identity matches?
-7. Can one person legitimately attend multiple programmes or batches? The proposed answer is yes.
-
-### C. Mobilisation and registration
-
-8. What outcomes must mobilisers record after every call or visit?
-9. How many follow-up attempts are expected before a lead is closed?
-10. Which registration documents are mandatory for future participants?
-11. Which missing documents should block enrolment, and which may remain pending?
-
-### D. Training
-
-12. Is the 45-day residential model universal or programme-dependent?
-13. Can sessions be modified for different batches and disability/access needs?
-14. What attendance threshold determines completion?
-15. Who can correct attendance after submission?
-16. Are baseline, weekly, midline and endline assessments required in the first release?
-
-### E. Placement and employment
-
-17. Which event officially counts as "placed": selected, offer received, joined or verified after joining?
-18. What evidence is required for the placement count?
-19. How should self-employment, internships and informal employment be represented?
-20. Who owns employer verification and placement updates?
-21. When is an employment episode considered ended?
-
-### F. Follow-up and retention
-
-22. Are 3-, 6- and 12-month follow-ups mandatory for every joined participant?
-23. Is the schedule measured from joining date or placement-record date?
-24. What counts as retained at each point?
-25. What outcomes and support needs must be recorded?
-26. Who is responsible for overdue follow-ups?
-
-### G. Locations, projects and reporting
-
-27. Should "centre" mean a permanent VoN centre, a temporary training site or either?
-28. Which geographic levels are required: state, district, taluk/block, city/village?
-29. Which donor/project/financial-year fields are mandatory?
-30. What are the official batch naming and coding rules?
-31. Which management reports and indicators must reconcile to donor reports?
-32. Which dashboard pages, charts and filters belong in the first release?
-33. Should placement reporting use verified joining as the headline metric?
-
-### H. Privacy and access
-
-34. Which roles can view disability, identity-document, address, salary and income information?
-35. Which roles can export participant-level data?
-36. How long should unsuccessful leads and document evidence be retained?
-37. Who approves participant merges, major corrections and deletions/restrictions?
-
-## 6. Source-of-truth proposal for review
-
-No single workbook is proposed as authoritative for every field.
-
-| Source class | Proposed use |
-| --- | --- |
-| Original source/register | Best evidence of what was originally recorded |
-| Verified portal record | Strong source for recent registration fields, subject to date and ownership |
-| Translated copy | Interpretation aid linked to the exact original; not independently counted |
-| Consolidated workbook | Cross-source staging and analysis; not automatically authoritative |
-| Current Master Sheet | Organised business reference, working IDs and review queues |
-| Meeting notes/approved decisions | Business definitions and scope, not participant-level facts |
-| Derived/temp sheet | Reproducible analysis only; never an independent source |
-
-Managers should approve the principle. Field-by-field authority will then be documented in the source-to-target mapping.
-
-## 7. Review outcome template
-
-For each item, record one of:
-
-- **Approved**
-- **Approved with changes**
-- **Not approved**
-- **Deferred**
-- **Needs VoN verification**
-
-| Review area | Outcome | Required change/clarification | Decision owner | Date |
-| --- | --- | --- | --- | --- |
-| Layered architecture |  |  |  |  |
-| Participant journey |  |  |  |  |
-| Identity and IDs |  |  |  |  |
-| Historical period |  |  |  |  |
-| Mobilisation |  |  |  |  |
-| Registration |  |  |  |  |
-| Training and sessions |  |  |  |  |
-| Attendance |  |  |  |  |
-| Assessments |  |  |  |  |
-| Placement definition |  |  |  |  |
-| Follow-up/retention |  |  |  |  |
-| Dashboard metrics and filters |  |  |  |  |
-| Location hierarchy |  |  |  |  |
-| Source authority |  |  |  |  |
-| Roles and privacy |  |  |  |  |
-| First-release scope |  |  |  |  |
-
-## 8. Approval gate
-
-The draft pull request should remain unmerged while the review is in progress. After review:
-
-1. Record manager decisions and required corrections.
-2. Update the architecture, model, dashboard definitions and decision log.
-3. Obtain explicit approval of the corrected model.
-4. Merge the discovery/model documentation into `main`.
-5. Continue to field-level source-to-target mapping and migration preparation.
-6. Create Supabase schema work only when that separate work is authorised.
-
-Approval of this document does not authorise a production migration or a Supabase/Vercel change.
+Do not merge the model as an approved production design or create production schema objects until this review is completed.
