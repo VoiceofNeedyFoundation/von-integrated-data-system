@@ -1,250 +1,401 @@
-# Voice of Needy IDS reduced logical data dictionary
+# Voice of Needy IDS logical data dictionary
 
-**Version:** 3  
-**Status:** Logical proposal; PostgreSQL types are provisional.
+**Version:** 4 field-level proposal  
+**Status:** For analyst, frontend and senior-management review. Types and constraints are logical until SQL migrations are approved.
 
-All business tables use UUID primary keys and include `created_at`, `updated_at`, `created_by` and `updated_by` where applicable. `created_by`/`updated_by` reference the authenticated user identity, so a separate staff table is unnecessary in release 1.
+The editable diagram and this dictionary are generated from the same entity specification. All operational tables also carry `created_at`, `updated_at`, `created_by` and `updated_by` where applicable.
 
-## 1. `core.participants`
+## 1. core.participants
 
-One real person. Primary identity/profile/contact/support values are stored as columns; alternative values are retained in validated JSON arrays.
+One canonical person; current identity, profile, contact and support details.
 
-| Field | Type | Null | Rule |
-|---|---|---:|---|
-| `participant_id` | uuid PK | No | Immutable system key |
-| `participant_code` | text unique | No | Human-readable VoN ID |
-| `first_name`, `middle_name`, `last_name` | text | Mixed | Do not fabricate missing name components |
-| `gender_code` | text | Yes | Controlled constraint |
-| `date_of_birth` | date | Yes | Age is calculated, not stored |
-| `primary_mobile`, `primary_email` | text | Yes | Restricted/masked; verification flags separate |
-| `mobile_verified`, `email_verified` | boolean | No | Default false |
-| `disability_type`, `disability_percent` | text/numeric | Yes | Restricted; percent 0–100 |
-| `education_level` | text | Yes | Controlled/standardised where possible |
-| `address`, `district`, `state`, `pin_code` | text | Yes | Pin code remains text |
-| `family_income` | numeric | Yes | Restricted; non-negative |
-| `parent_guardian_details` | jsonb | Yes | Validated name/relationship/contact structure |
-| `accessibility_and_support` | jsonb | Yes | Requirements, preferences and career goals |
-| `alternate_identifiers` | jsonb | Yes | Type/value/verified/source array |
-| `alternate_contacts` | jsonb | Yes | Type/value/relationship/verified array |
-| `external_file_number` | text | Yes | Historical VoN reference |
-| `identity_status` | text | No | verified/pending_review/unresolved |
-| `record_status` | text | No | active/inactive/deceased |
+| Key | Field | Type / constraint |
+|---|---|---|
+| PK | `participant_id` | uuid NOT NULL |
+| UQ | `participant_code` | text NOT NULL |
+| — | `first_name` | text NOT NULL |
+| — | `middle_name` | text NULL |
+| — | `last_name` | text NULL |
+| — | `gender_code` | text NULL |
+| — | `date_of_birth` | date NULL |
+| — | `primary_mobile` | text NULL, restricted |
+| — | `primary_email` | text NULL, restricted |
+| — | `mobile_verified` | boolean NOT NULL |
+| — | `email_verified` | boolean NOT NULL |
+| — | `disability_type` | text NULL, restricted |
+| — | `disability_percent` | numeric(5,2) NULL |
+| — | `education_level` | text NULL |
+| — | `address` | text NULL, restricted |
+| — | `district` | text NULL |
+| — | `state` | text NULL |
+| — | `pin_code` | text NULL |
+| — | `family_income` | numeric NULL, restricted |
+| — | `parent_guardian` | jsonb NULL, validated |
+| — | `support_preferences` | jsonb NULL, validated |
+| — | `external_file_number` | text NULL |
+| — | `identity_status` | text NOT NULL, check |
+| — | `record_status` | text NOT NULL, check |
 
-## 2. `core.outreach_records`
+## 2. core.participant_identifiers
 
-One sourcing, mobilisation or follow-up contact event. It can exist before participant identity is resolved.
+Multiple VoN, legacy, candidate, roster and external identifiers per participant.
 
-| Field | Type | Null | Rule |
-|---|---|---:|---|
-| `outreach_record_id` | uuid PK | No | Immutable |
-| `participant_id` | uuid FK | Yes | Null until identity is resolved |
-| `project_id` | uuid FK | Yes | Interested/associated project |
-| `event_type` | text | No | sourced/contacted/follow_up/eligibility_review |
-| `event_date` | date | Yes | Historical value may be unavailable |
-| `source_channel` | text | Yes | Camp/referral/list/call/other |
-| `source_name` | text | Yes | Partner/list/camp detail |
-| `call_response` | text | Yes | Controlled value |
-| `eligibility_status` | text | Yes | eligible/ineligible/pending/not_assessed |
-| `outcome_status` | text | Yes | interested/not_interested/enrolled/unreachable/etc. |
-| `outcome_reason` | text | Yes | Required for approved terminal statuses |
-| `next_followup_date` | date | Yes | Future action |
-| `owner_user_id` | uuid | Yes | Auth user |
-| `source_attributes` | jsonb | Yes | Non-core source-only attributes |
+| Key | Field | Type / constraint |
+|---|---|---|
+| PK | `participant_identifier_id` | uuid NOT NULL |
+| FK | `participant_id` | uuid NOT NULL |
+| — | `identifier_type` | text NOT NULL, check |
+| — | `identifier_value` | text NOT NULL, restricted |
+| — | `normalised_hash` | text NULL |
+| — | `is_primary` | boolean NOT NULL |
+| — | `is_verified` | boolean NOT NULL |
+| — | `verified_at` | timestamptz NULL |
+| — | `source_record_id` | uuid NULL |
+| UQ | `type + value/hash` | partial uniqueness |
 
-## 3. `core.projects`
+## 3. core.projects
 
-| Field | Type | Null | Rule |
-|---|---|---:|---|
-| `project_id` | uuid PK | No | Immutable |
-| `project_code` | text unique | No | Stable business code |
-| `project_name`, `donor_name` | text | No/Yes | Approved display values |
-| `financial_year` | text | Yes | Standard format |
-| `start_date`, `end_date` | date | Yes | Valid interval |
-| `target_participants` | integer | Yes | Non-negative |
-| `centre_codes` | text[] | Yes | Approved centres |
-| `is_active` | boolean | No | Default true |
+Programme/donor project context used across mobilisation, delivery and outcomes.
 
-## 4. `core.batches`
+| Key | Field | Type / constraint |
+|---|---|---|
+| PK | `project_id` | uuid NOT NULL |
+| UQ | `project_code` | text NOT NULL |
+| — | `project_name` | text NOT NULL |
+| — | `donor_name` | text NULL |
+| — | `financial_year` | text NULL |
+| — | `start_date` | date NULL |
+| — | `end_date` | date NULL |
+| — | `target_participants` | integer NULL >= 0 |
+| — | `centre_codes` | text[] NULL |
+| — | `is_active` | boolean NOT NULL |
 
-| Field | Type | Null | Rule |
-|---|---|---:|---|
-| `batch_id` | uuid PK | No | Immutable |
-| `batch_code` | text unique | No | Canonical batch ID |
-| `project_id` | uuid FK | No | Project/donor context |
-| `original_batch_ids` | jsonb | Yes | Source batch labels and files |
-| `financial_year`, `centre_code`, `centre_name` | text | Yes | Standardised reporting context |
-| `planned_intake` | integer | Yes | Non-negative |
-| `planned_start_date`, `planned_end_date` | date | Yes | Planned dates |
-| `actual_start_date`, `actual_end_date` | date | Yes | Evidence-based actuals |
-| `planned_session_count` | integer | Yes | Non-negative |
-| `trainer_details`, `planned_topics` | jsonb | Yes | Low-volume structured arrays |
-| `batch_status` | text | No | planned/active/completed/cancelled |
-| `plan_evidence_url`, `completion_evidence_url` | text | Yes | Restricted as required |
+## 4. core.outreach_events
 
-## 5. `core.enrolments`
+One sourcing, mobilisation, call or eligibility event; may precede identity resolution.
 
-One participant attempt in one batch.
+| Key | Field | Type / constraint |
+|---|---|---|
+| PK | `outreach_event_id` | uuid NOT NULL |
+| FK | `participant_id` | uuid NULL |
+| FK | `project_id` | uuid NULL |
+| — | `event_type` | text NOT NULL, check |
+| — | `event_date` | date NULL |
+| — | `source_channel` | text NULL |
+| — | `source_name` | text NULL |
+| — | `call_response` | text NULL |
+| — | `eligibility_status` | text NULL, check |
+| — | `outcome_status` | text NULL, check |
+| — | `outcome_reason` | text NULL |
+| — | `next_followup_date` | date NULL |
+| — | `owner_user_id` | uuid NULL |
+| — | `record_classification` | text NULL |
+| — | `source_attributes` | jsonb NULL, validated |
 
-| Field | Type | Null | Rule |
-|---|---|---:|---|
-| `enrolment_id` | uuid PK | No | Immutable |
-| `participant_id`, `batch_id` | uuid FK | No | Parent participant and batch |
-| `candidate_enrolment_code` | text | Yes | Historical/frontend business code |
-| `attempt_number` | integer | No | Default 1 |
-| `registration_date`, `training_start_date`, `training_end_date` | date | Yes | Source-evidenced |
-| `status` | text | No | registered/enrolled/active/completed/dropped/withdrawn/reentered |
-| `days_attended` | integer | Yes | Derived from attendance when detailed data exists |
-| `completion_status`, `completion_date` | text/date | Yes | Approved completion rule |
-| `dropout_stage`, `dropout_reason_category`, `dropout_reason_detail` | text | Yes | Required as applicable |
-| `reentry_date` | date | Yes | Approved re-entry |
-| `profile_complete`, `documents_verified`, `resume_current`, `interview_ready` | boolean | Yes | Null means not assessed, not false |
-| `readiness_review_date`, `readiness_notes` | date/text | Yes | Latest approved review |
-| `original_registration_numbers` | jsonb | Yes | Source identifiers |
+## 5. core.batches
 
-Unique: `(participant_id, batch_id, attempt_number)`.
+One training cohort with planned and actual delivery context.
 
-## 6. `core.sessions`
+| Key | Field | Type / constraint |
+|---|---|---|
+| PK | `batch_id` | uuid NOT NULL |
+| UQ | `batch_code` | text NOT NULL |
+| FK | `project_id` | uuid NOT NULL |
+| — | `original_batch_ids` | jsonb NULL, validated |
+| — | `financial_year` | text NULL |
+| — | `centre_code` | text NULL |
+| — | `centre_name` | text NULL |
+| — | `planned_intake` | integer NULL >= 0 |
+| — | `planned_start_date` | date NULL |
+| — | `planned_end_date` | date NULL |
+| — | `actual_start_date` | date NULL |
+| — | `actual_end_date` | date NULL |
+| — | `planned_session_count` | integer NULL >= 0 |
+| — | `trainer_details` | jsonb NULL, validated |
+| — | `planned_topics` | jsonb NULL, validated |
+| — | `batch_status` | text NOT NULL, check |
+| — | `plan_evidence_url` | text NULL |
+| — | `completion_evidence_url` | text NULL |
 
-One planned/delivered batch session. The 45 Master Sheet session columns become rows.
+## 6. core.enrolments
 
-| Field | Type | Null | Rule |
-|---|---|---:|---|
-| `session_id` | uuid PK | No | Immutable |
-| `batch_id` | uuid FK | No | Parent batch |
-| `session_number` | integer | No | Positive; unique within batch |
-| `module_code`, `topic` | text | Yes | Approved module/description |
-| `planned_date`, `actual_date` | date | Yes | Keep separate |
-| `delivery_status` | text | No | planned/delivered/rescheduled/cancelled |
-| `status_reason` | text | Yes | Required for rescheduled/cancelled |
-| `facilitator_details` | jsonb | Yes | One or more facilitator references |
-| `evidence_url`, `session_notes` | text | Yes | Supporting evidence |
+One participant attempt in one batch; training, completion, dropout and readiness.
 
-Unique: `(batch_id, session_number)`.
+| Key | Field | Type / constraint |
+|---|---|---|
+| PK | `enrolment_id` | uuid NOT NULL |
+| FK | `participant_id` | uuid NOT NULL |
+| FK | `batch_id` | uuid NOT NULL |
+| UQ | `participant + batch + attempt` | unique |
+| — | `candidate_enrolment_code` | text NULL |
+| — | `attempt_number` | integer NOT NULL |
+| — | `registration_date` | date NULL |
+| — | `training_start_date` | date NULL |
+| — | `training_end_date` | date NULL |
+| — | `status` | text NOT NULL, check |
+| — | `completion_status` | text NULL, check |
+| — | `completion_date` | date NULL |
+| — | `dropout_stage` | text NULL |
+| — | `dropout_reason_category` | text NULL |
+| — | `dropout_reason_detail` | text NULL |
+| — | `reentry_date` | date NULL |
+| — | `profile_complete` | boolean NULL |
+| — | `documents_verified` | boolean NULL |
+| — | `resume_current` | boolean NULL |
+| — | `interview_ready` | boolean NULL |
+| — | `readiness_review_date` | date NULL |
+| — | `readiness_notes` | text NULL |
 
-## 7. `core.attendance`
+## 7. core.sessions
 
-One enrolment in one session. The Day 1–46 columns become rows.
+One planned/delivered session for one batch; normalises Session 01–45 columns.
 
-| Field | Type | Null | Rule |
-|---|---|---:|---|
-| `attendance_id` | uuid PK | No | Immutable |
-| `enrolment_id`, `session_id` | uuid FK | No | Must belong to same batch |
-| `attendance_date` | date | Yes | Session actual/planned date where known |
-| `attendance_status` | text | No | present/absent/late/leave/not_marked |
-| `reason` | text | Yes | Approved reason where required |
-| `source_register_id`, `source_mark` | text | Yes | Original attendance evidence |
-| `verified` | boolean | No | Default false |
-| `verification_notes` | text | Yes | Review outcome |
+| Key | Field | Type / constraint |
+|---|---|---|
+| PK | `session_id` | uuid NOT NULL |
+| FK | `batch_id` | uuid NOT NULL |
+| UQ | `batch + session_number` | unique |
+| — | `session_number` | integer NOT NULL > 0 |
+| — | `module_code` | text NULL |
+| — | `topic` | text NULL |
+| — | `planned_date` | date NULL |
+| — | `actual_date` | date NULL |
+| — | `delivery_status` | text NOT NULL, check |
+| — | `status_reason` | text NULL |
+| — | `facilitator_details` | jsonb NULL, validated |
+| — | `evidence_url` | text NULL |
+| — | `session_notes` | text NULL |
 
-Unique: `(enrolment_id, session_id)`.
+## 8. core.attendance
 
-## 8. `core.assessments`
+One enrolment-session result; normalises Day 01–46 marks and source rosters.
 
-One assessment result for one enrolment, point/week and domain. Assessment event/result/rubric metadata are combined.
+| Key | Field | Type / constraint |
+|---|---|---|
+| PK | `attendance_id` | uuid NOT NULL |
+| FK | `enrolment_id` | uuid NOT NULL |
+| FK | `session_id` | uuid NOT NULL |
+| UQ | `enrolment + session` | unique |
+| — | `attendance_date` | date NULL |
+| — | `attendance_status` | text NOT NULL, check |
+| — | `reason` | text NULL |
+| — | `source_register_id` | text NULL |
+| — | `source_mark` | text NULL |
+| — | `verified` | boolean NOT NULL |
+| — | `verification_notes` | text NULL |
 
-| Field | Type | Null | Rule |
-|---|---|---:|---|
-| `assessment_id` | uuid PK | No | Immutable |
-| `enrolment_id` | uuid FK | No | Parent enrolment |
-| `assessment_type` | text | No | baseline/midline/endline/weekly/kredo_mid/kredo_final |
-| `period_code` | text | Yes | Week number or assessment point |
-| `domain_code`, `domain_label` | text | Yes | Technical/behavioural/approved domain |
-| `attempt_number` | integer | No | Default 1 |
-| `assessment_date` | date | Yes | Actual date |
-| `rubric_version` | text | Yes | Preserves comparability |
-| `score_value`, `maximum_score` | numeric | Yes | Valid range |
-| `score_percent` | numeric | Yes | Derived |
-| `completion_status` | text | No | complete/partial/missing/not_due |
-| `missing_reason` | text | Yes | Required when missing |
-| `source_result` | jsonb | Yes | Source-specific non-core detail |
+## 9. core.assessments
 
-## 9. `core.employers`
+One enrolment, assessment point/week and domain result.
 
-| Field | Type | Null | Rule |
-|---|---|---:|---|
-| `employer_id` | uuid PK | No | Immutable |
-| `employer_code` | text unique | No | Stable code |
-| `employer_name` | text | No | Normalised name |
-| `location_address` | text | Yes | Work/office location |
-| `contact_name`, `contact_designation`, `contact_number`, `contact_email` | text | Yes | Restricted contact data |
-| `sector`, `accessibility_notes` | text | Yes | Matching/reporting |
-| `disability_types_considered` | text[] | Yes | Approved values |
-| `existing_staff_with_disability`, `required_staff_with_disability` | integer | Yes | Non-negative |
-| `last_contact_date` | date | Yes | Engagement freshness |
-| `verification_status` | text | No | pending/verified/inactive |
+| Key | Field | Type / constraint |
+|---|---|---|
+| PK | `assessment_id` | uuid NOT NULL |
+| FK | `enrolment_id` | uuid NOT NULL |
+| UQ | `enrolment + type + period + domain + attempt` | unique |
+| — | `assessment_type` | text NOT NULL, check |
+| — | `period_code` | text NULL |
+| — | `domain_code` | text NULL |
+| — | `domain_label` | text NULL |
+| — | `attempt_number` | integer NOT NULL |
+| — | `assessment_date` | date NULL |
+| — | `rubric_version` | text NULL |
+| — | `score_value` | numeric NULL |
+| — | `maximum_score` | numeric NULL > 0 |
+| — | `score_percent` | numeric generated/derived |
+| — | `completion_status` | text NOT NULL, check |
+| — | `missing_reason` | text NULL |
+| — | `source_result` | jsonb NULL, validated |
 
-## 10. `core.job_opportunities`
+## 10. core.employers
 
-One role/vacancy at an employer. Rows may be created by splitting multi-role employer source cells during reviewed migration.
+One employer organisation and its current engagement profile.
 
-| Field | Type | Null | Rule |
-|---|---|---:|---|
-| `job_opportunity_id` | uuid PK | No | Immutable |
-| `employer_id` | uuid FK | No | Parent employer |
-| `project_id` | uuid FK | Yes | Project engagement context |
-| `role_title`, `work_type` | text | No/Yes | Opportunity |
-| `location` | text | Yes | Standardised where possible |
-| `education_required`, `skills_required` | text/jsonb | Yes | Matching inputs |
-| `accessibility_requirements` | text | Yes | Matching input |
-| `salary_amount`, `salary_period` | numeric/text | Yes | Comparable units |
-| `vacancies_count` | integer | Yes | Non-negative |
-| `open_date`, `close_date` | date | Yes | Valid interval |
-| `status` | text | No | open/on_hold/filled/closed |
+| Key | Field | Type / constraint |
+|---|---|---|
+| PK | `employer_id` | uuid NOT NULL |
+| UQ | `employer_code` | text NOT NULL |
+| — | `employer_name` | text NOT NULL |
+| — | `location_address` | text NULL |
+| — | `contact_name` | text NULL, restricted |
+| — | `contact_designation` | text NULL |
+| — | `contact_number` | text NULL, restricted |
+| — | `contact_email` | text NULL, restricted |
+| — | `sector` | text NULL |
+| — | `disability_types_considered` | text[] NULL |
+| — | `accessibility_notes` | text NULL |
+| — | `existing_staff_with_disability` | integer NULL >= 0 |
+| — | `required_staff_with_disability` | integer NULL >= 0 |
+| — | `last_contact_date` | date NULL |
+| — | `verification_status` | text NOT NULL, check |
 
-## 11. `core.placements`
+## 11. core.job_opportunities
 
-One enrolment-opportunity attempt. It covers mapping through verified joining.
+One role/vacancy at one employer; supports open-vacancy and matching questions.
 
-| Field | Type | Null | Rule |
-|---|---|---:|---|
-| `placement_id` | uuid PK | No | Immutable |
-| `enrolment_id`, `job_opportunity_id` | uuid FK | No | Candidate and opportunity |
-| `attempt_number` | integer | No | Default 1 |
-| `skills_fit`, `preference_fit`, `location_fit`, `accessibility_fit` | boolean | Yes | Null means not assessed |
-| `suitability_status`, `suitability_reason` | text | Yes | Approved rule |
-| `pipeline_stage` | text | No | mapped/referred/interviewed/selected/offered/joined/rejected/withdrawn |
-| `referral_date`, `interview_date`, `offer_date`, `joining_date` | date | Yes | Milestones |
-| `actual_employer_name`, `actual_job_role` | text | Yes | Preserves historical placement if opportunity incomplete |
-| `joining_salary`, `salary_period` | numeric/text | Yes | Comparable units |
-| `offer_letter_available`, `joining_verified` | boolean | No | Defaults false |
-| `placement_status` | text | No | pending/active/ended/not_joined |
-| `rejection_reason`, `exit_reason`, `status_date` | text/date | Yes | Required as applicable |
-| `evidence_url` | text | Yes | Controlled access |
+| Key | Field | Type / constraint |
+|---|---|---|
+| PK | `job_opportunity_id` | uuid NOT NULL |
+| FK | `employer_id` | uuid NOT NULL |
+| FK | `project_id` | uuid NULL |
+| — | `role_title` | text NOT NULL |
+| — | `work_type` | text NULL |
+| — | `location` | text NULL |
+| — | `education_required` | text NULL |
+| — | `skills_required` | jsonb NULL, validated |
+| — | `accessibility_requirements` | text NULL |
+| — | `salary_amount` | numeric NULL >= 0 |
+| — | `salary_period` | text NULL, check |
+| — | `vacancies_count` | integer NULL >= 0 |
+| — | `open_date` | date NULL |
+| — | `close_date` | date NULL |
+| — | `status` | text NOT NULL, check |
 
-Unique: `(enrolment_id, job_opportunity_id, attempt_number)`.
+## 12. core.placement_attempts
 
-## 12. `core.followups`
+One candidate-opportunity attempt from mapping through verified joining/exit.
 
-One follow-up attempt/checkpoint after placement.
+| Key | Field | Type / constraint |
+|---|---|---|
+| PK | `placement_attempt_id` | uuid NOT NULL |
+| FK | `enrolment_id` | uuid NOT NULL |
+| FK | `job_opportunity_id` | uuid NULL |
+| UQ | `enrolment + opportunity + attempt` | unique when linked |
+| — | `attempt_number` | integer NOT NULL |
+| — | `skills_fit` | boolean NULL |
+| — | `preference_fit` | boolean NULL |
+| — | `location_fit` | boolean NULL |
+| — | `accessibility_fit` | boolean NULL |
+| — | `suitability_status` | text NULL, check |
+| — | `suitability_reason` | text NULL |
+| — | `pipeline_stage` | text NOT NULL, check |
+| — | `referral_date` | date NULL |
+| — | `interview_date` | date NULL |
+| — | `offer_date` | date NULL |
+| — | `joining_date` | date NULL |
+| — | `actual_employer_name` | text NULL |
+| — | `actual_job_role` | text NULL |
+| — | `joining_salary` | numeric NULL >= 0 |
+| — | `salary_period` | text NULL, check |
+| — | `offer_letter_available` | boolean NOT NULL |
+| — | `joining_verified` | boolean NOT NULL |
+| — | `placement_status` | text NOT NULL, check |
+| — | `rejection_or_exit_reason` | text NULL |
+| — | `status_date` | date NULL |
+| — | `evidence_url` | text NULL |
 
-| Field | Type | Null | Rule |
-|---|---|---:|---|
-| `followup_id` | uuid PK | No | Immutable |
-| `placement_id` | uuid FK | No | Parent placement |
-| `checkpoint_month` | integer | Yes | 3/6/12/24 or approved value |
-| `attempt_number` | integer | No | Default 1 |
-| `due_date`, `followup_date` | date | Yes | Due/actual separate |
-| `employment_status` | text | Yes | same_employer/different_employer/exited/unreachable/unverified |
-| `current_workplace`, `previous_workplace`, `current_job_role` | text | Yes | Current state |
-| `monthly_salary`, `salary_period` | numeric/text | Yes | Comparable units |
-| `reason_for_leaving` | text | Yes | If exited |
-| `verification_status` | text | No | pending/verified/unverified/unreachable |
-| `evidence_url`, `notes` | text | Yes | Evidence and interpretation |
+## 13. core.followups
 
-## Audit and security
+One employment follow-up/checkpoint attempt after placement.
 
-### `audit.import_runs`
+| Key | Field | Type / constraint |
+|---|---|---|
+| PK | `followup_id` | uuid NOT NULL |
+| FK | `placement_attempt_id` | uuid NOT NULL |
+| UQ | `placement + checkpoint + attempt` | unique |
+| — | `checkpoint_month` | integer NULL |
+| — | `attempt_number` | integer NOT NULL |
+| — | `due_date` | date NULL |
+| — | `followup_date` | date NULL |
+| — | `employment_status` | text NULL, check |
+| — | `current_workplace` | text NULL |
+| — | `previous_workplace` | text NULL |
+| — | `current_job_role` | text NULL |
+| — | `monthly_salary` | numeric NULL >= 0 |
+| — | `salary_period` | text NULL, check |
+| — | `reason_for_leaving` | text NULL |
+| — | `verification_status` | text NOT NULL, check |
+| — | `evidence_url` | text NULL |
+| — | `notes` | text NULL |
 
-Source asset, started/completed times, status, source/staged/loaded/rejected/unresolved counts, pipeline version and error summary.
+## 14. staging.import_runs
 
-### `audit.source_records`
+One repeatable import execution with reconciliation counts.
 
-Import run, source file/tab/row, source record ID, checksum/raw reference, proposed/matched participant and batch IDs, match confidence/status, reviewer decision, quality issues JSON, resolution notes, target table/ID and disposition. This replaces separate lineage, identity-review and exception tables without losing their fields.
+| Key | Field | Type / constraint |
+|---|---|---|
+| PK | `import_run_id` | uuid NOT NULL |
+| — | `source_asset_name` | text NOT NULL |
+| — | `source_asset_id` | text NULL |
+| — | `source_version` | text NULL |
+| — | `pipeline_version` | text NOT NULL |
+| — | `started_at` | timestamptz NOT NULL |
+| — | `completed_at` | timestamptz NULL |
+| — | `status` | text NOT NULL, check |
+| — | `source_count` | integer NOT NULL >= 0 |
+| — | `staged_count` | integer NOT NULL >= 0 |
+| — | `loaded_count` | integer NOT NULL >= 0 |
+| — | `rejected_count` | integer NOT NULL >= 0 |
+| — | `unresolved_count` | integer NOT NULL >= 0 |
+| — | `error_summary` | text NULL |
 
-### `audit.change_log`
+## 15. staging.source_records
 
-Target table/ID, operation, changed fields, before/after snapshots subject to privacy controls, actor and timestamp.
+One immutable source row plus validation, identity decision and target lineage.
 
-### `security.user_access`
+| Key | Field | Type / constraint |
+|---|---|---|
+| PK | `source_record_id` | uuid NOT NULL |
+| FK | `import_run_id` | uuid NOT NULL |
+| — | `source_file_id` | text NULL |
+| — | `source_file_name` | text NOT NULL |
+| — | `source_sheet_name` | text NULL |
+| — | `source_row_number` | integer NULL |
+| — | `source_record_key` | text NOT NULL |
+| — | `source_checksum` | text NOT NULL |
+| — | `raw_payload` | jsonb NOT NULL, restricted |
+| — | `standardised_payload` | jsonb NULL |
+| — | `validation_status` | text NOT NULL, check |
+| — | `validation_issues` | jsonb NULL |
+| — | `identity_match_status` | text NULL, check |
+| — | `match_confidence` | numeric NULL |
+| — | `review_decision` | text NULL, check |
+| — | `reviewed_by` | uuid NULL |
+| — | `reviewed_at` | timestamptz NULL |
+| — | `target_table` | text NULL |
+| — | `target_record_id` | uuid NULL |
+| — | `disposition` | text NOT NULL, check |
 
-Auth user ID, role, optional project/centre scope, valid dates and active flag. Authentication identities remain in the platform auth schema.
+## 16. audit.change_log
+
+Material change history for protected operational records.
+
+| Key | Field | Type / constraint |
+|---|---|---|
+| PK | `change_log_id` | uuid NOT NULL |
+| — | `target_table` | text NOT NULL |
+| — | `target_record_id` | uuid NOT NULL |
+| — | `operation` | text NOT NULL, check |
+| — | `changed_fields` | text[] NULL |
+| — | `before_values` | jsonb NULL, restricted |
+| — | `after_values` | jsonb NULL, restricted |
+| — | `actor_user_id` | uuid NULL |
+| — | `changed_at` | timestamptz NOT NULL |
+| — | `request_id` | text NULL |
+
+## 17. security.user_access
+
+Role and optional project/centre access scope for an authenticated user.
+
+| Key | Field | Type / constraint |
+|---|---|---|
+| PK | `user_access_id` | uuid NOT NULL |
+| FK | `auth_user_id` | uuid NOT NULL -> auth.users |
+| — | `role_code` | text NOT NULL, check |
+| FK | `project_id` | uuid NULL |
+| — | `centre_code` | text NULL |
+| — | `valid_from` | date NULL |
+| — | `valid_to` | date NULL |
+| — | `is_active` | boolean NOT NULL |
+| — | `granted_by` | uuid NULL |
+| — | `granted_at` | timestamptz NOT NULL |
+
+## Controlled values
+
+Stable status fields use PostgreSQL check constraints or enum/domain types defined in version-controlled migrations. A separate lookup table is introduced only when VoN needs users to administer the values at runtime.
+
+Minimum controlled lists include outreach event/outcome/eligibility, batch/enrolment/session/attendance/assessment status, placement pipeline/status, follow-up employment/verification status, identifier type, salary period, user role and import disposition.
+
+## Privacy
+
+Phone, email, address, government/external identifiers, disability/support information, income and raw source payloads are restricted. Reporting views exclude direct identifiers unless an authorised operational use requires them.

@@ -1,19 +1,19 @@
-# Key-question traceability for reduced model
+# Key-question traceability
 
-| KQ | Core tables | Reporting view | Main gap/decision |
-|---|---|---|---|
-| KQ01 | `participants`, `outreach_records`, `enrolments` | Candidate funnel | Eligibility denominator and non-join reasons |
-| KQ02 | `projects`, `batches`, `enrolments` | Candidate funnel | Planned intake ownership |
-| KQ03 | `batches`, `sessions` | Training delivery | Standard module/status/reason values |
-| KQ04 | `employers`, `job_opportunities`, `placements` | Employer opportunities; placement pipeline | Formal vacancy/mapping workflow |
-| KQ05 | `enrolments`, `assessments` | Training delivery | Assessment point and eligibility rules |
-| KQ06 | `enrolments`, `sessions`, `attendance` | Training delivery | Attendance and 45-day completion rules |
-| KQ07 | `enrolments` | Training delivery | Readiness checklist/evidence standard |
-| KQ08 | `enrolments`, `placements` | Placement pipeline | Verified joining distinct from offer |
-| KQ09 | `assessments` | Training delivery | Comparable domains and rubric versions |
-| KQ10 | `participants`, `job_opportunities`, `placements` | Placement pipeline | Suitability criteria and approval |
-| KQ11 | `placements`, `followups` | Retention and income | 12/24-month process and unreachable treatment |
-| KQ12 | `placements`, `followups` | Retention and income | New comparable income collection required |
-| KQ13 | All tables with project/batch/centre fields | All views | Consistent context keys |
+| KQ | Canonical source | Reporting view |
+|---|---|---|
+| KQ01 | participants, identifiers, outreach events, enrolments | Candidate funnel |
+| KQ02 | projects, batches, enrolments | Candidate funnel |
+| KQ03 | batches, sessions | Training delivery |
+| KQ04 | employers, job opportunities, placement attempts | Placement pipeline |
+| KQ05 | enrolments, assessments | Assessment progress |
+| KQ06 | enrolments, sessions, attendance | Training delivery |
+| KQ07 | enrolment readiness fields | Training delivery |
+| KQ08 | enrolments, placement attempts | Placement pipeline |
+| KQ09 | assessments with point/domain/rubric version | Assessment progress |
+| KQ10 | participant preferences/support, opportunity requirements, placement suitability fields | Placement pipeline |
+| KQ11 | placement attempts, follow-ups | Retention and income |
+| KQ12 | joining income and follow-up income | Retention and income |
+| KQ13 | all relevant records joined through project/batch/centre context | All views |
 
-The reduced model still covers all 13 questions. Table reduction changes storage structure, not the information required.
+All 13 questions are supported. KQ12 still requires new, comparable and verified income collection.

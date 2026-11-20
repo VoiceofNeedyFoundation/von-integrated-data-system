@@ -1,33 +1,36 @@
 # Voice of Needy Integrated Data System
 
-This repository is the shared engineering workspace for Voice of Needy Foundation's Integrated Data System.
+This repository contains the discovery, data architecture and professional logical data model for the Voice of Needy Foundation Integrated Data System.
 
-## Current phase
+## Current status
 
-Discovery and reduced canonical data-model review. No production database, Supabase, Vercel or historical migration changes are authorised.
+The project is at data-model review. No production schema, Supabase configuration, Vercel change or historical migration is authorised.
 
-## Version 3 design
+## Version 4 model
 
-- 12 business tables
-- 3 migration/audit tables
-- 1 access-control table
-- 5 dashboard SQL views
-- embedded and dedicated Mermaid diagrams
+- 13 canonical core tables
+- 2 staging/migration tables
+- 1 audit table
+- 1 security/access table
+- 5 read-only reporting views
+- editable two-page diagrams.net model with detailed fields and relationships
 
-## Review documents
+## Main deliverables
 
-- [Reduced canonical model](docs/data-model.md)
-- [Mermaid ERD and flows](docs/data-model-erd.md)
+- [Professional data model](docs/data-model.md)
+- [Editable draw.io model](docs/diagrams/von-ids-data-model-v4.drawio)
+- [SVG preview](docs/diagrams/von-ids-data-model-v4.svg)
+- [PNG preview](docs/diagrams/von-ids-data-model-v4.png)
+- [Field-level data dictionary](docs/data-dictionary.md)
 - [Data architecture](docs/data-architecture.md)
-- [Logical data dictionary](docs/data-dictionary.md)
-- [Dashboard views](docs/dashboard-data-model.md)
+- [Reporting model](docs/dashboard-data-model.md)
 - [Key-question traceability](docs/key-question-to-data-model.md)
 - [Senior-management review](docs/senior-manager-data-model-review.md)
 - [Project status](docs/project-status.md)
 
 ## Safety
 
-- Never commit participant data, credentials or secrets.
+- Never commit real participant data, credentials or secrets.
 - Preserve original sources and record-level lineage.
 - Never auto-merge uncertain identities.
 - Do not create production schema or migrate data before model approval.

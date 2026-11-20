@@ -1,47 +1,14 @@
-# Voice of Needy IDS Mermaid diagrams
+# Voice of Needy IDS diagrams
 
-**Version:** 3 reduced-table model
+The professional data model is available in three formats:
 
-## Business model
+- [Editable diagrams.net source](diagrams/von-ids-data-model-v4.drawio)
+- [SVG preview](diagrams/von-ids-data-model-v4.svg)
+- [PNG preview](diagrams/von-ids-data-model-v4.png)
 
-```mermaid
-erDiagram
-    PARTICIPANTS ||--o{ OUTREACH_RECORDS : has
-    PROJECTS ||--o{ OUTREACH_RECORDS : supports
-    PROJECTS ||--o{ BATCHES : funds
-    PARTICIPANTS ||--o{ ENROLMENTS : undertakes
-    BATCHES ||--o{ ENROLMENTS : contains
-    BATCHES ||--o{ SESSIONS : schedules
-    ENROLMENTS ||--o{ ATTENDANCE : receives
-    SESSIONS ||--o{ ATTENDANCE : records
-    ENROLMENTS ||--o{ ASSESSMENTS : has
-    EMPLOYERS ||--o{ JOB_OPPORTUNITIES : offers
-    ENROLMENTS ||--o{ PLACEMENTS : attempts
-    JOB_OPPORTUNITIES ||--o{ PLACEMENTS : receives
-    PLACEMENTS ||--o{ FOLLOWUPS : monitored_by
-```
+The editable file contains:
 
-## Source-to-dashboard flow
+1. **Architecture and lineage** — Master Sheet/source groups → staging/migration control → canonical domains → secure reporting views → dashboard.
+2. **Detailed logical model** — 17 physical tables with purpose, fields, PostgreSQL-oriented types, PK/FK/UQ markings, nullability/constraints and relationships.
 
-```mermaid
-flowchart TD
-    A["Master Sheet and historical sources"] --> B["Raw and staging evidence"]
-    B --> C["Identity and quality review"]
-    C --> D["12-table canonical model"]
-    D --> E["Five reporting views"]
-    E --> F["VoN dashboard"]
-```
-
-## Participant journey
-
-```mermaid
-flowchart TD
-    A["Sourced or mobilised"] --> B["Enrolled in batch"]
-    B --> C["Sessions and attendance"]
-    C --> D["Assessments and readiness"]
-    D --> E["Matched to opportunity"]
-    E --> F["Offer and verified joining"]
-    F --> G["Retention and income follow-up"]
-```
-
-GitHub renders these fenced Mermaid diagrams directly. The same relationships can later be exported to diagrams.net after business approval; maintaining an editable draw.io file before approval would create two competing design sources.
+The draw.io file is the visual design source. The data dictionary is generated from the same entity specification so the diagram and documentation remain consistent.

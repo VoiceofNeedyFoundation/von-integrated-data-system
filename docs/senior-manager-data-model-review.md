@@ -1,44 +1,34 @@
-# Senior-management review: reduced VoN data model
+# Senior-management review: Voice of Needy IDS version 4
 
 ## Decision requested
 
-Review and approve the reduced first-release model: **12 business tables, 3 audit tables, 1 access table and 5 reporting views**.
+Approve or amend the professional first-release logical model shown in the editable diagrams.net file.
 
-## Reduction achieved
+| Layer | Count |
+|---|---:|
+| Canonical core tables | 13 |
+| Staging/migration tables | 2 |
+| Audit tables | 1 |
+| Security tables | 1 |
+| Physical tables total | 17 |
+| Reporting SQL views | 5 |
 
-| Version | Business/core | Audit/access | Stored dashboard tables | Total physical tables |
-|---|---:|---:|---:|---:|
-| Previous proposal | 22 | 7 | 0 | 29 |
-| Revised version 3 | 12 | 4 | 0 | 16 |
+This model is intentionally smaller than the earlier 29-table proposal while retaining professional normalization. `participant_identifiers` remains separate because VoN has multiple candidate, legacy, roster, external and permanent identifiers that require uniqueness, verification and source lineage.
 
-This is a reduction of 13 physical tables (approximately 45%) without deleting source attributes.
+## What managers should validate
 
-## What was combined
+1. Participant journey and first-release scope.
+2. Mobilisation eligibility, conversion and non-join definitions.
+3. Planned intake, session delivery and 45-day completion rules.
+4. Assessment points/domains and rubric comparability.
+5. Placement-readiness checklist.
+6. Suitability and verified-joining rules.
+7. Retention denominators and treatment of unreachable/unverified records.
+8. Income collection, periodicity, verification and privacy.
+9. Donor/project, centre and batch reporting ownership.
 
-- identifiers, contacts and support needs into participant;
-- sourcing and mobilisation contacts into outreach records;
-- assessment event, domain result and rubric metadata into assessment;
-- readiness flags into enrolment;
-- candidate match and verified employment into placement;
-- identity review and data-quality exceptions into source-record audit;
-- dashboard facts/dimensions into SQL views.
+## Technical review
 
-## Why the remaining tables cannot be safely combined
+The analyst/engineer should validate table grains, fields, types, PK/FK/UQ constraints, controlled values, source-to-target mappings, JSON structures and privacy/RLS boundaries.
 
-- Participant and enrolment differ because one person can join more than one batch.
-- Batch, session and attendance have different one-to-many grains.
-- Employer, opportunity and placement represent organisation, vacancy and candidate attempt.
-- Follow-ups repeat after joining and must preserve history.
-
-## Review decisions
-
-1. Approve the 12-table business boundary.
-2. Approve structured JSON for alternative identifiers/contacts and low-volume supporting attributes.
-3. Approve outreach records as the common sourcing/mobilisation event table.
-4. Approve placement as both pipeline attempt and joined-employment record.
-5. Approve five dashboard views rather than stored fact/dimension tables for release 1.
-6. Confirm conversion, completion, readiness, verified joining, retention and income definitions.
-
-## Recommendation
-
-Approve version 3 as the first-release logical model, subject to field-level source mapping and KPI-definition corrections. Do not create production schema or migrate data until Checkpoint 3 is formally recorded.
+Do not approve production migration merely by approving this logical model. Physical SQL and migration reconciliation are later checkpoints.

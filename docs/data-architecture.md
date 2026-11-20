@@ -1,50 +1,37 @@
-# Voice of Needy IDS reduced data architecture
+# Voice of Needy IDS data architecture
 
-**Status:** Version 3 proposal; GitHub documentation only.
-
-## Architecture
+**Version:** 4 proposal
 
 ```mermaid
 flowchart TD
-    A["Drive sources and future frontend"] --> B["Raw evidence"]
-    B --> C["Staging, typing and validation"]
-    C --> D["Identity and quality review"]
-    D --> E["12 business tables"]
-    E --> F["Five secure reporting views"]
-    F --> G["Dashboard and analysis"]
+    A["Master Sheet, historical files and future frontend"] --> B["staging.import_runs and staging.source_records"]
+    B --> C["Validation, standardisation and identity review"]
+    C --> D["13 canonical core tables"]
+    D --> E["Five secure reporting views"]
+    E --> F["VoN management dashboard"]
 ```
 
-| Layer | Objects | Rule |
+| Layer | Physical objects | Responsibility |
 |---|---|---|
-| Raw/staging | Import-specific data, not programme tables | Immutable evidence; originals never modified |
-| Core | 12 business tables | Frontend and approved migration write here |
-| Audit | `import_runs`, `source_records`, `change_log` | Provenance, identity/quality decisions and changes |
-| Security | `user_access` | Least-privilege role and scope assignment |
-| Reporting | Five SQL views | Read-only, pseudonymised where required, no duplicate storage |
+| Staging | `import_runs`, `source_records` | Immutable source-row evidence, typing, validation, identity review, disposition and reconciliation |
+| Canonical core | 13 tables | Authoritative participant, programme delivery and employment pathway records |
+| Audit | `change_log` | Material change history |
+| Security | `user_access` | Role and optional project/centre scope |
+| Reporting | Five SQL views | Dashboard-ready, read-only and privacy-controlled outputs |
 
-## Core domains
+## Migration sequence
 
-| Domain | Tables |
-|---|---|
-| Participant journey | `participants`, `outreach_records` |
-| Programme delivery | `projects`, `batches`, `enrolments`, `sessions`, `attendance`, `assessments` |
-| Employment pathway | `employers`, `job_opportunities`, `placements`, `followups` |
+`Extract → register import → preserve source row → standardise → validate → resolve identity → review exceptions → upsert core → reconcile → refresh views`
 
-## Migration process
-
-`Extract → register source → stage → standardise → validate → resolve identity → review exceptions → upsert core → reconcile → refresh views`
-
-All reruns use import/source keys and upserts. Source, staged, loaded, rejected and unresolved counts are reconciled for every dataset.
+Migration reruns use source keys/checksums and stable target IDs. Unresolved or rejected rows remain in `staging.source_records`; they are never silently discarded or forced into a participant.
 
 ## Frontend boundary
 
-- Frontend writes to approved core operations only.
-- Raw, audit and reporting layers are not directly editable.
-- Participant creation returns a stable UUID and participant code.
-- Attendance submission performs idempotent enrolment-session upserts.
-- A placement can progress from mapping to joining without creating a second employment object.
-- Follow-ups are appended; previous checkpoints are never overwritten.
+- The frontend writes only through approved core operations.
+- Raw/staging, audit and reporting views are not directly editable.
+- New participants receive stable UUID and VoN participant codes.
+- Attendance is an idempotent enrolment-session upsert.
+- Placement attempts progress from mapping to joining without duplicating participant identity.
+- Follow-up attempts are appended; earlier checkpoints are not overwritten.
 
-## Scope boundary
-
-No Supabase configuration, SQL schema, production data migration or Vercel change is included at this checkpoint.
+No Supabase, production migration or Vercel change is included at this checkpoint.
