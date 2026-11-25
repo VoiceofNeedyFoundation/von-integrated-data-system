@@ -6,6 +6,12 @@
 
 **Visual model:** [Open the diagram directly in diagrams.net](https://app.diagrams.net/#HVoiceofNeedyFoundation/von-integrated-data-system/data-model-review-v4/03-Data-Model.drawio)
 
+The Draw.io file contains three pages in review order:
+
+1. Simplified overview — the participant journey and management view.
+2. Architecture and lineage — sources, staging, core system and reporting flow.
+3. Detailed logical model — all tables, fields, keys and relationships.
+
 The first visit may ask the reviewer to authorise diagrams.net to access the private GitHub repository. After authorisation, the link opens the visual diagram instead of the XML code shown by GitHub.
 
 ## 1. What this model is for
@@ -67,5 +73,5 @@ The model creates one reliable participant journey from first contact through tr
 
 1. Read this overview.
 2. Review `02-Detailed-Data-Model.md` for table grains, relationships, mappings and controls.
-3. [Open the complete editable visual model in diagrams.net](https://app.diagrams.net/#HVoiceofNeedyFoundation/von-integrated-data-system/data-model-review-v4/03-Data-Model.drawio) for the field-level design.
+3. [Open the complete editable visual model in diagrams.net](https://app.diagrams.net/#HVoiceofNeedyFoundation/von-integrated-data-system/data-model-review-v4/03-Data-Model.drawio). Start with page 1 for the simplified overview, then use pages 2 and 3 for technical review.
 
