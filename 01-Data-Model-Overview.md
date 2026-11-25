@@ -4,6 +4,10 @@
 **Updated:** 25 November 2026  
 **Status:** Logical model for review. No production database, Supabase configuration, or historical migration is authorised by this document.
 
+**Visual model:** [Open the diagram directly in diagrams.net](https://app.diagrams.net/#HVoiceofNeedyFoundation/von-integrated-data-system/data-model-review-v4/03-Data-Model.drawio)
+
+The first visit may ask the reviewer to authorise diagrams.net to access the private GitHub repository. After authorisation, the link opens the visual diagram instead of the XML code shown by GitHub.
+
 ## 1. What this model is for
 
 The model creates one reliable participant journey from first contact through training, assessment, placement and employment follow-up. It replaces spreadsheet-shaped storage with linked records while retaining the original source row, verification status and audit history.
@@ -63,5 +67,5 @@ The model creates one reliable participant journey from first contact through tr
 
 1. Read this overview.
 2. Review `02-Detailed-Data-Model.md` for table grains, relationships, mappings and controls.
-3. Open `03-Data-Model.drawio` for the complete editable visual model and field-level design.
+3. [Open the complete editable visual model in diagrams.net](https://app.diagrams.net/#HVoiceofNeedyFoundation/von-integrated-data-system/data-model-review-v4/03-Data-Model.drawio) for the field-level design.
 
