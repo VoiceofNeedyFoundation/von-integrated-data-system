@@ -1,6 +1,71 @@
 <?xml version='1.0' encoding='utf-8'?>
-<mxfile host="app.diagrams.net" modified="2026-11-20T00:00:00.000Z" agent="OpenAI Codex" version="24.7.17" pages="2">
-  <diagram id="von-overview-v4" name="1. Architecture and lineage">
+<mxfile host="app.diagrams.net" modified="2026-11-25T00:00:00.000Z" agent="OpenAI Codex" version="24.7.17" pages="3">
+  <diagram id="von-simplified-overview-v41" name="1. Simplified overview">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3300" pageHeight="1800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="simple_title" value="Voice of Needy Integrated Data System — simplified overview" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1f4e78;strokeColor=#1f4e78;fontColor=#ffffff;fontSize=24;fontStyle=1;align=left;spacingLeft=18;" vertex="1" parent="1">
+          <mxGeometry x="50" y="35" width="3150" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_banner" value="One reliable participant journey from first contact to sustained employment" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eaf2f8;strokeColor=#6c8ebf;fontColor=#17365d;fontSize=17;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="520" y="145" width="2260" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_outreach" value="&lt;b&gt;1. PARTICIPANT &amp;amp; OUTREACH&lt;/b&gt;&lt;hr&gt;One participant record&lt;br&gt;Multiple linked IDs&lt;br&gt;Sourcing and mobilisation history" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;fontSize=14;fontStyle=0;strokeWidth=2;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="70" y="350" width="520" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_training" value="&lt;b&gt;2. TRAINING&lt;/b&gt;&lt;hr&gt;Project and batch&lt;br&gt;Enrolment and attempts&lt;br&gt;Sessions and completion" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;fontSize=14;fontStyle=0;strokeWidth=2;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="710" y="350" width="520" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_learning" value="&lt;b&gt;3. ATTENDANCE &amp;amp; ASSESSMENT&lt;/b&gt;&lt;hr&gt;Daily attendance&lt;br&gt;Baseline, midline and endline&lt;br&gt;Evidence and verification" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;fontSize=14;fontStyle=0;strokeWidth=2;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="350" width="520" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_placement" value="&lt;b&gt;4. PLACEMENT&lt;/b&gt;&lt;hr&gt;Employers and vacancies&lt;br&gt;Candidate-job matching&lt;br&gt;Interview, offer and joining" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;fontSize=14;fontStyle=0;strokeWidth=2;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1990" y="350" width="520" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_followup" value="&lt;b&gt;5. FOLLOW-UP &amp;amp; OUTCOMES&lt;/b&gt;&lt;hr&gt;Employment retention&lt;br&gt;Salary and role changes&lt;br&gt;Exit reasons and outcomes" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;fontSize=14;fontStyle=0;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="2630" y="350" width="520" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_flow_1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;strokeWidth=1.5;" edge="1" parent="1" source="simple_outreach" target="simple_training">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_flow_2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;strokeWidth=1.5;" edge="1" parent="1" source="simple_training" target="simple_learning">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_flow_3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;strokeWidth=1.5;" edge="1" parent="1" source="simple_learning" target="simple_placement">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_flow_4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;strokeWidth=1.5;" edge="1" parent="1" source="simple_placement" target="simple_followup">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_lineage" value="&lt;b&gt;SOURCE EVIDENCE &amp;amp; TRACEABILITY&lt;/b&gt;&lt;hr&gt;Original file, tab and row retained&lt;br&gt;Raw values and verification status preserved" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;fontSize=13;strokeWidth=2;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="260" y="820" width="800" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_identity" value="&lt;b&gt;IDENTITY &amp;amp; DATA-QUALITY SAFEGUARDS&lt;/b&gt;&lt;hr&gt;Uncertain matches remain under review&lt;br&gt;No automatic name-based merging" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;fontSize=13;strokeWidth=2;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1250" y="820" width="800" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_security" value="&lt;b&gt;SECURITY &amp;amp; AUDIT&lt;/b&gt;&lt;hr&gt;Role and project/centre access&lt;br&gt;Sensitive data protection and change history" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=12;fontSize=13;strokeWidth=2;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="2240" y="820" width="800" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_reporting" value="&lt;b&gt;MANAGEMENT REPORTING&lt;/b&gt;&lt;hr&gt;Mobilisation conversion • Training delivery • Attendance • Assessment progress • Placement pipeline • Employment retention" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;spacing=14;fontSize=15;strokeWidth=2;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="520" y="1230" width="2260" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_support_1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;strokeWidth=1.5;" edge="1" parent="1" source="simple_lineage" target="simple_reporting">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_support_2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;strokeWidth=1.5;" edge="1" parent="1" source="simple_identity" target="simple_reporting">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_support_3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;strokeWidth=1.5;" edge="1" parent="1" source="simple_security" target="simple_reporting">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="simple_outcome" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=ERmany;endFill=0;startArrow=ERone;startFill=0;strokeWidth=1.5;" edge="1" parent="1" source="simple_followup" target="simple_reporting">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="von-overview-v4" name="2. Architecture and lineage">
     <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="3200" pageHeight="1800" math="0" shadow="0">
       <root>
         <mxCell id="0" />
@@ -86,12 +151,12 @@
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram id="von-detailed-v4" name="2. Detailed logical model">
+  <diagram id="von-detailed-v4" name="3. Detailed logical model">
     <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="4300" pageHeight="4300" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="detailed_title" value="Voice of Needy IDS — detailed logical data model (version 4 proposal)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1f4e78;strokeColor=#1f4e78;fontColor=#ffffff;fontSize=22;fontStyle=1;align=left;spacingLeft=16;" vertex="1" parent="1">
+        <mxCell id="detailed_title" value="Voice of Needy IDS — detailed logical data model (version 4.1 proposal)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1f4e78;strokeColor=#1f4e78;fontColor=#ffffff;fontSize=22;fontStyle=1;align=left;spacingLeft=16;" vertex="1" parent="1">
           <mxGeometry x="40" y="30" width="4100" height="60" as="geometry" />
         </mxCell>
         <mxCell id="participants" value="&lt;div style='font-size:15px'&gt;&lt;b&gt;1. core.participants&lt;/b&gt;&lt;/div&gt;&lt;div style='font-size:10px;color:#444'&gt;&lt;i&gt;One canonical person; current identity, profile, contact and support details.&lt;/i&gt;&lt;/div&gt;&lt;hr&gt;&lt;div&gt;&lt;b&gt;PK&lt;/b&gt; &lt;b&gt;participant_id&lt;/b&gt; : uuid NOT NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;UQ&lt;/b&gt; &lt;b&gt;participant_code&lt;/b&gt; : text NOT NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;first_name&lt;/b&gt; : text NOT NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;middle_name&lt;/b&gt; : text NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;last_name&lt;/b&gt; : text NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;gender_source_recorded_code&lt;/b&gt; : text NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;gender_confirmed_code&lt;/b&gt; : text NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;gender_confirmation_status&lt;/b&gt; : text NOT NULL, check&lt;/div&gt;&lt;div&gt;&lt;b&gt;gender_confirmed_at&lt;/b&gt; : date NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;gender_confirmation_source_record_id&lt;/b&gt; : uuid NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;date_of_birth&lt;/b&gt; : date NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;primary_mobile&lt;/b&gt; : text NULL, restricted&lt;/div&gt;&lt;div&gt;&lt;b&gt;primary_email&lt;/b&gt; : text NULL, restricted&lt;/div&gt;&lt;div&gt;&lt;b&gt;mobile_verified&lt;/b&gt; : boolean NOT NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;email_verified&lt;/b&gt; : boolean NOT NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;disability_type&lt;/b&gt; : text NULL, restricted&lt;/div&gt;&lt;div&gt;&lt;b&gt;disability_percent&lt;/b&gt; : numeric(5,2) NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;education_level&lt;/b&gt; : text NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;address&lt;/b&gt; : text NULL, restricted&lt;/div&gt;&lt;div&gt;&lt;b&gt;district&lt;/b&gt; : text NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;state&lt;/b&gt; : text NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;pin_code&lt;/b&gt; : text NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;family_income&lt;/b&gt; : numeric NULL, restricted&lt;/div&gt;&lt;div&gt;&lt;b&gt;parent_guardian&lt;/b&gt; : jsonb NULL, validated&lt;/div&gt;&lt;div&gt;&lt;b&gt;support_preferences&lt;/b&gt; : jsonb NULL, validated&lt;/div&gt;&lt;div&gt;&lt;b&gt;external_file_number&lt;/b&gt; : text NULL&lt;/div&gt;&lt;div&gt;&lt;b&gt;identity_status&lt;/b&gt; : text NOT NULL, check&lt;/div&gt;&lt;div&gt;&lt;b&gt;record_status&lt;/b&gt; : text NOT NULL, check&lt;/div&gt;&lt;hr&gt;&lt;div style='font-size:9px;color:#666'&gt;Common audit: created_at, updated_at, created_by, updated_by where applicable.&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
